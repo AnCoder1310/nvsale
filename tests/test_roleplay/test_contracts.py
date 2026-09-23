@@ -3,8 +3,13 @@ from pathlib import Path
 
 import pytest
 
-from src.roleplay.contracts import RUBRIC_CRITERIA, RUBRIC_SCORE_MAX, RUBRIC_SCORE_MIN, ScenarioContract
-from src.roleplay.state import RoleplayState
+from backend.roleplay.contracts import (
+    RUBRIC_CRITERIA,
+    RUBRIC_SCORE_MAX,
+    RUBRIC_SCORE_MIN,
+    ScenarioContract,
+)
+from backend.roleplay.state import RoleplayState
 
 SCENARIOS = Path("data/scenarios/scenarios.json")
 

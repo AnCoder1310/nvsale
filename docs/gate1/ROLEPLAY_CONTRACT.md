@@ -49,4 +49,4 @@ active, completed, advisor-ended, dropped-out, or max-turns.
 Chuong supplies checkpoint/knowledge implementations. Duy owns state semantics and
 customer behavior. An receives `advisor_visible_context()` only. Evaluation later
 uses the shared five criteria and 1–5 scale from
-`src/knowledge/metadata.py`.
+`backend/knowledge/metadata.py`.
