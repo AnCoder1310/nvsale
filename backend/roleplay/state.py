@@ -17,6 +17,7 @@ class ConversationStage(StrEnum):
     CLOSING = "closing"
     FINISHED = "finished"
 
+
 class TerminationStatus(StrEnum):
     ACTIVE = "active"
     COMPLETED = "completed"
@@ -24,10 +25,12 @@ class TerminationStatus(StrEnum):
     DROPPED_OUT = "dropped_out"
     MAX_TURNS = "max_turns"
 
+
 class RoleplayMessage(BaseModel):
     message_id: str = Field(default_factory=lambda: str(uuid4()))
     role: Literal["customer", "advisor"]
     content: str = Field(min_length=1)
+
 
 class RoleplayState(BaseModel):
     session_id: str
@@ -73,6 +76,9 @@ class RoleplayState(BaseModel):
 
     def customer_prompt_context(self) -> dict[str, Any]:
         """Server-only context for the customer model; unrevealed facts stay private."""
+        revealed_fact_values = {
+            fact_key: self.hidden_facts[fact_key] for fact_key in self.revealed_facts if fact_key in self.hidden_facts
+        }
         return {
             "scenario_id": self.scenario_id,
             "difficulty": self.difficulty,
@@ -83,7 +89,7 @@ class RoleplayState(BaseModel):
             "visible_context": self.visible_context,
             "customer_goals": self.customer_goals,
             "current_intent": self.current_intent,
-            "revealed_facts": self.revealed_facts,
+            "revealed_facts": revealed_fact_values,
             "active_objections": self.active_objections,
             "messages": [message.model_dump() for message in self.messages],
         }

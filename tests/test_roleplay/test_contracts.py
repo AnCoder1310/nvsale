@@ -20,6 +20,11 @@ from backend.roleplay.state import RoleplayState
 
 SCENARIOS = Path("data/scenarios/scenarios.json")
 
+
+def _raw_scenario(index: int = 0):
+    return json.loads(SCENARIOS.read_text(encoding="utf-8"))[index]
+
+
 def test_all_gate1_scenarios_load_and_initialize_state():
     raw_scenarios = json.loads(SCENARIOS.read_text(encoding="utf-8"))
     assert len(raw_scenarios) == 3
@@ -31,12 +36,11 @@ def test_all_gate1_scenarios_load_and_initialize_state():
         assert state.persona == scenario.persona
         assert state.turn_count == 0
         assert state.active_objections == []
-        assert state.unresolved_objections == [
-            objection.objection_id for objection in scenario.objections
-        ]
+        assert state.unresolved_objections == [objection.objection_id for objection in scenario.objections]
+
 
 def test_customer_prompt_does_not_leak_unrevealed_hidden_facts():
-    scenario = ScenarioContract.model_validate(json.loads(SCENARIOS.read_text(encoding="utf-8"))[0])
+    scenario = ScenarioContract.model_validate(_raw_scenario())
     state = RoleplayState.from_scenario("session-1", scenario)
     prompt_context = state.customer_prompt_context()
     assert "hidden_facts" not in prompt_context
@@ -46,8 +50,19 @@ def test_customer_prompt_does_not_leak_unrevealed_hidden_facts():
     assert prompt_context["interest_level"] == state.interest_level
 
 
+def test_customer_prompt_only_contains_revealed_fact_values():
+    scenario = ScenarioContract.model_validate(_raw_scenario())
+    state = RoleplayState.from_scenario("session-1", scenario)
+    state.revealed_facts.append("daily_distance")
+
+    prompt_context = state.customer_prompt_context()
+
+    assert prompt_context["revealed_facts"] == {"daily_distance": scenario.hidden_facts["daily_distance"]}
+    assert scenario.hidden_facts["budget"] not in str(prompt_context)
+
+
 def test_advisor_visible_context_excludes_private_customer_state():
-    scenario = ScenarioContract.model_validate(json.loads(SCENARIOS.read_text(encoding="utf-8"))[0])
+    scenario = ScenarioContract.model_validate(_raw_scenario())
     state = RoleplayState.from_scenario("session-1", scenario)
     advisor_context = state.advisor_visible_context()
 
@@ -72,14 +87,11 @@ def test_advisor_visible_context_excludes_private_customer_state():
     assert scenario.customer_goals not in str(advisor_context)
     assert scenario.buyer_intent not in str(advisor_context)
     assert all(value not in str(advisor_context) for value in scenario.hidden_facts.values())
-    assert all(
-        objection.objection_id not in str(advisor_context)
-        for objection in scenario.objections
-    )
+    assert all(objection.objection_id not in str(advisor_context) for objection in scenario.objections)
 
 
 def test_malformed_objection_is_rejected():
-    raw_scenario = json.loads(SCENARIOS.read_text(encoding="utf-8"))[0]
+    raw_scenario = _raw_scenario()
     raw_scenario["objections"] = [{"objection_id": "OBJ_INCOMPLETE"}]
 
     with pytest.raises(ValueError):
@@ -88,11 +100,44 @@ def test_malformed_objection_is_rejected():
 
 @pytest.mark.parametrize("invalid_max_turns", [0, -1, "not-a-number"])
 def test_invalid_max_turns_is_rejected(invalid_max_turns):
-    raw_scenario = json.loads(SCENARIOS.read_text(encoding="utf-8"))[0]
+    raw_scenario = _raw_scenario()
     raw_scenario["termination_conditions"]["max_turns"] = invalid_max_turns
 
     with pytest.raises(ValueError):
         ScenarioContract.model_validate(raw_scenario)
+
+
+def test_unknown_target_skill_is_rejected():
+    raw_scenario = _raw_scenario()
+    raw_scenario["target_skills"] = ["generic_sales_skill"]
+
+    with pytest.raises(ValueError):
+        ScenarioContract.model_validate(raw_scenario)
+
+
+def test_disclosure_rule_must_reference_a_hidden_fact():
+    raw_scenario = _raw_scenario()
+    raw_scenario["disclosure_rules"][0]["fact_key"] = "unknown_fact"
+
+    with pytest.raises(ValueError, match="unknown hidden facts"):
+        ScenarioContract.model_validate(raw_scenario)
+
+
+def test_objection_identifiers_must_be_unique():
+    raw_scenario = _raw_scenario()
+    raw_scenario["objections"].append(raw_scenario["objections"][0])
+
+    with pytest.raises(ValueError, match="must be unique"):
+        ScenarioContract.model_validate(raw_scenario)
+
+
+def test_visible_context_must_not_contain_a_hidden_fact_value():
+    raw_scenario = _raw_scenario()
+    raw_scenario["visible_context"] += " " + raw_scenario["hidden_facts"]["budget"]
+
+    with pytest.raises(ValueError, match="contains hidden fact"):
+        ScenarioContract.model_validate(raw_scenario)
+
 
 def test_rubric_contract_uses_the_shared_one_to_five_scale():
     assert len(RUBRIC_CRITERIA) == 5

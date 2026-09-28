@@ -6,7 +6,7 @@
     "sales_channel": "Fanpage",
     "training_objective": "Khai thác cường độ sử dụng và xử lý băn khoăn về tổng chi phí cùng thời gian sạc bằng thông tin có nguồn.",
     "scenario_version": "2.0",
-    "target_skills": ["Need Discovery", "Objection Handling", "Closing"],
+    "target_skills": ["need_discovery", "objection_handling", "closing_next_step"],
     "persona": {
       "name": "Anh Nam",
       "age": 35,
@@ -65,7 +65,7 @@
     "sales_channel": "Tin nhắn tư vấn",
     "training_objective": "Khám phá nhu cầu gia đình và người cùng ra quyết định, sau đó so sánh giá trị mà không hạ thấp đối thủ hoặc đưa ra cam kết khấu hao thiếu căn cứ.",
     "scenario_version": "2.0",
-    "target_skills": ["Product Knowledge", "Objection Handling", "Closing"],
+    "target_skills": ["product_knowledge", "objection_handling", "closing_next_step"],
     "persona": {
       "name": "Chị Thanh",
       "age": 32,
@@ -124,7 +124,7 @@
     "sales_channel": "Chat trực tuyến",
     "training_objective": "Khai thác quãng đường và khả năng tiếp cận điểm sạc để xử lý lo ngại sạc tại chung cư bằng phương án có thể kiểm chứng.",
     "scenario_version": "2.0",
-    "target_skills": ["Need Discovery", "Objection Handling"],
+    "target_skills": ["need_discovery", "objection_handling"],
     "persona": {
       "name": "Anh Tuấn",
       "age": 29,
