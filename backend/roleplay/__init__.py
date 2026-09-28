@@ -6,6 +6,8 @@ from .contracts import (
     RoleplayGraphContract,
     ScenarioContract,
 )
+from .customer_agent import CustomerAgent, CustomerResponseError
+from .graph import RoleplayGraph, RoleplayGraphError
 from .scenario_loader import ScenarioRepository, ScenarioSummary
 from .state import ConversationStage, RoleplayState, TerminationStatus
 from .state_reducer import apply_turn_analysis
@@ -15,6 +17,10 @@ __all__ = [
     "CUSTOMER_BEHAVIOR_RULES",
     "RUBRIC_CRITERIA",
     "ConversationStage",
+    "CustomerAgent",
+    "CustomerResponseError",
+    "RoleplayGraph",
+    "RoleplayGraphError",
     "RoleplayGraphContract",
     "RoleplayState",
     "ScenarioContract",
