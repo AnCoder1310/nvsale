@@ -7,6 +7,7 @@ from .contracts import (
     ScenarioContract,
 )
 from .customer_agent import CustomerAgent, CustomerResponseError
+from .evaluator import EvaluationError, KnowledgeEvidence, RoleplayEvaluator
 from .graph import (
     RoleplayGraph,
     RoleplayGraphError,
@@ -25,12 +26,15 @@ __all__ = [
     "ConversationStage",
     "CustomerAgent",
     "CustomerResponseError",
+    "EvaluationError",
+    "KnowledgeEvidence",
     "RoleplayGraph",
     "RoleplayGraphError",
     "RoleplayScenarioNotFoundError",
     "RoleplaySessionConflictError",
     "RoleplaySessionNotFoundError",
     "RoleplayGraphContract",
+    "RoleplayEvaluator",
     "RoleplayState",
     "ScenarioContract",
     "ScenarioRepository",
