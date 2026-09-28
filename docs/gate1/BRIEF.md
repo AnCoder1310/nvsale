@@ -98,6 +98,16 @@ AI Customer phải:
 - tiết lộ thông tin dần dần;
 - duy trì tính nhất quán của tình huống.
 
+Mỗi scenario chỉ hiển thị cho tư vấn viên những thông tin họ có thể biết hợp lý
+trước cuộc tư vấn, như kênh trao đổi, giai đoạn bán hàng và nhu cầu đã được khách
+chủ động nêu. Ngân sách, thói quen sử dụng, điều kiện sạc và các băn khoăn chưa
+được nêu vẫn là thông tin cần khám phá. AI Customer hiểu ý nghĩa của câu hỏi và
+không yêu cầu tư vấn viên phải dùng đúng một câu hoặc một từ khóa cố định.
+
+Độ khó được chọn trước khi bắt đầu và giữ cố định trong một attempt để kết quả
+giữa các lần luyện tập có thể so sánh. Điều chỉnh độ khó ngay trong hội thoại là
+tính năng sau MVP.
+
 Sau khi kết thúc phiên, hệ thống phân tích hội thoại và tạo đánh giá theo các tiêu chí được cấu hình.
 
 Ví dụ:
@@ -109,7 +119,19 @@ Kỹ năng 3
 Kỹ năng 4
 ```
 
-Tên, định nghĩa và cách chấm cụ thể của các kỹ năng **sẽ được xác định sau**.
+MVP sử dụng năm chiều đánh giá:
+
+```text
+Need Discovery
+Product Knowledge
+Objection Handling
+Policy Accuracy
+Closing / Next Step
+```
+
+Mỗi chiều có mô tả hành vi quan sát được, trạng thái áp dụng, thang điểm 1–5 và
+dẫn chứng bằng lượt hội thoại. Nếu phiên không tạo cơ hội hợp lý để thể hiện một
+kỹ năng, hệ thống ghi `NOT_OBSERVED` thay vì tự gán điểm thấp.
 
 Kết quả có thể bao gồm:
 
@@ -120,7 +142,10 @@ Kết quả có thể bao gồm:
 - dẫn chứng từ hội thoại;
 - gợi ý cải thiện.
 
-Quản lý có thể **phê duyệt hoặc chỉnh sửa** đánh giá trước khi lưu kết quả chính thức.
+Kết quả AI ngay sau phiên là bản nháp để tư vấn viên học và thử lại. Tư vấn viên
+chọn attempt muốn gửi đánh giá chính thức; chỉ attempt đã gửi mới vào hàng đợi
+Manager. Quản lý có thể **phê duyệt hoặc chỉnh sửa** điểm, nhận xét và đề xuất
+luyện tập tiếp theo trước khi kết quả trở thành chính thức.
 
 ---
 
@@ -143,7 +168,9 @@ Quản lý có thể **phê duyệt hoặc chỉnh sửa** đánh giá trước 
                                         │
                                   AI phân tích
                                         │
-                               Kết quả + dẫn chứng
+                            Bản nháp + dẫn chứng
+                                        │
+                              Gửi attempt đã chọn
                                         │
                                  Quản lý review
                                         │
@@ -227,7 +254,9 @@ Phản ứng của khách hàng thay đổi dựa trên những gì tư vấn vi
 
 AI không chỉ đưa ra điểm số.
 
-Hệ thống có thể chỉ ra đoạn hoặc lượt hội thoại liên quan để người dùng hiểu tại sao mình nhận được feedback đó.
+Mỗi nhận định và điểm số phải chỉ ra lượt hội thoại liên quan để người dùng hiểu
+tại sao mình nhận được feedback đó. Dẫn chứng được kiểm tra để bảo đảm quote và
+turn ID thật sự tồn tại trong transcript.
 
 ---
 
@@ -241,6 +270,8 @@ Quản lý có thể:
 Phê duyệt
 Chỉnh sửa
 Thêm ghi chú
+
+Điều chỉnh đề xuất luyện tập tiếp theo
 ```
 
 ---
@@ -262,13 +293,15 @@ Hội thoại nhiều lượt với AI Customer
 
 Xem kết quả sau phiên
 
+Luyện tập lại và chọn attempt để gửi Manager review
+
 Xem các phiên luyện tập gần đây
 ```
 
 ### Quản lý đào tạo
 
 ```text
-Xem danh sách đánh giá đang chờ
+Xem danh sách attempt đã được tư vấn viên gửi và đang chờ
 
 Xem transcript và đánh giá AI
 
@@ -292,7 +325,9 @@ AI Customer
 
 Phân tích phiên luyện tập
 
-Lưu lịch sử phiên
+Kiểm tra factual claim theo nguồn được phê duyệt
+
+Lưu transcript trước khi chạy đánh giá và lưu lịch sử phiên
 
 Lưu thay đổi của Manager
 
@@ -306,13 +341,13 @@ Knowledge corpus được chuẩn bị sẵn
 Có thể phát triển thêm:
 
 ```text
-Đề xuất bài luyện tập cá nhân hóa
+Lộ trình học cá nhân hóa nhiều bước
 
 Theo dõi tiến bộ theo thời gian
 
 Dashboard toàn đội
 
-Độ khó nâng cao
+Độ khó tự thích ứng ngay trong hội thoại
 
 Tự động phát hiện chính sách mới
 

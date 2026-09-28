@@ -118,7 +118,7 @@ Sales Advisor
 → Advisor Home
 
 Training Manager
-→ Manager Overview
+→ Manager Reviews
 ```
 
 ---
@@ -146,7 +146,7 @@ Retrieve knowledge
   ↓
 Filter relevant/current documents
   ↓
-Rerank
+Rerank when benchmark shows a measurable benefit
   ↓
 Generate grounded answer
   ↓
@@ -217,7 +217,9 @@ Việc ingest/update corpus được xử lý bởi pipeline phía backend của
 
 ### F4. Practice Scenario Library
 
-MVP có khoảng 4–5 scenario cố định.
+MVP ưu tiên tối thiểu 3 scenario đã được kiểm chứng end-to-end; mục tiêu là 4
+scenario nếu scenario thứ tư đạt cùng chuẩn dữ liệu, hành vi và đánh giá. Không
+thêm scenario chỉ để đủ số lượng.
 
 Ví dụ:
 
@@ -238,13 +240,23 @@ Một scenario có thể chứa:
 ```text
 title
 persona
-context
-hidden_needs
+sales_channel
+visible_context
+hidden_facts
 opening_statement
 difficulty
 reveal_rules
 assessment_dimensions
+evidence_snapshot
+scenario_version
 ```
+
+Thông tin hiển thị trước phiên chỉ gồm những gì advisor có thể biết hợp lý từ
+kênh/giai đoạn bán hàng và tương tác trước đó. Không đưa mục tiêu discovery vào
+brief rồi tiếp tục chấm advisor vì đã “khám phá” chính thông tin đó.
+
+Difficulty được chọn trước khi bắt đầu và cố định trong một attempt. Adaptive
+difficulty giữa hội thoại là P1.
 
 ---
 
@@ -259,7 +271,10 @@ AI Customer phải:
 * phản ứng theo câu trả lời của advisor;
 * không tự đổi scenario;
 * không reveal toàn bộ hidden information ngay lập tức;
-* tiết lộ thông tin dần theo conversation;
+* tiết lộ thông tin theo semantic intent của câu hỏi, không phụ thuộc một exact
+  phrase hoặc keyword duy nhất;
+* trả lời câu hỏi rộng bằng lượng thông tin phù hợp thay vì dump toàn bộ hidden
+  facts;
 * duy trì hội thoại nhiều lượt.
 
 AI Customer không được hiển thị:
@@ -305,19 +320,22 @@ Advisor có thể chọn:
 [End Practice]
 ```
 
-Sau khi kết thúc:
+Mỗi turn được persist trong lúc hội thoại. Sau khi kết thúc:
 
 ```text
-Freeze transcript
+Persist final turn and freeze transcript
       ↓
-Analyze session
+Mark evaluation pending
       ↓
-Generate assessment
+Analyze session and factual claims
       ↓
-Generate feedback
+Generate provisional assessment + feedback
       ↓
-Save session
+Validate and save evaluation
 ```
+
+Provider timeout hoặc malformed evaluator output không được làm mất transcript.
+Hệ thống hiển thị trạng thái evaluation failed/retryable riêng với lỗi của advisor.
 
 ---
 
@@ -325,7 +343,7 @@ Save session
 
 Sau phiên luyện tập, hệ thống đánh giá advisor theo các tiêu chí được cấu hình.
 
-Assessment có thể bao gồm:
+Assessment bao gồm:
 
 ```text
 Overall result
@@ -341,7 +359,22 @@ Transcript evidence
 Suggested improvement
 ```
 
-Rubric, số lượng skill, trọng số và thang điểm cụ thể sẽ được nghiên cứu và chốt ở giai đoạn sau.
+MVP dùng năm chiều: Need Discovery, Product Knowledge, Objection Handling,
+Policy Accuracy và Closing / Next Step, thang điểm 1–5. Mỗi chiều phải có:
+
+```text
+status: ASSESSED | NOT_OBSERVED | INSUFFICIENT_EVIDENCE
+observable checks: MET | MISSED | NOT_APPLICABLE | UNCLEAR
+score: 1–5 khi status = ASSESSED, ngược lại null
+transcript turn IDs + exact quotes
+reason
+improvement suggestion
+```
+
+`NOT_OBSERVED` được dùng khi scenario không tạo cơ hội hợp lý để thể hiện kỹ
+năng; nó không bị quy đổi thành điểm thấp. Overall score do code tính trên các
+criterion đã được assessed và phải hiển thị coverage. Không suy diễn phần trăm
+năng lực từ thang 1–5 khi chưa có định nghĩa được hiệu chuẩn.
 
 ---
 
@@ -372,13 +405,18 @@ Retrieve relevant knowledge
 Compare with approved sources
        ↓
 SUPPORTED
-UNSUPPORTED
+UNVERIFIABLE
 CONTRADICTED
        ↓
 Provide evidence to assessment
 ```
 
 Mục tiêu là không để phần factual accuracy phụ thuộc hoàn toàn vào đánh giá chủ quan của LLM Judge.
+
+`UNVERIFIABLE` có nghĩa knowledge base chưa đủ evidence, không tự động kết luận
+advisor sai. Mỗi factual finding phải liên kết tới claim trong transcript và
+source/version/span khi có. Critical factual error không được che khuất bởi điểm
+trung bình cao ở các chiều khác.
 
 ---
 
@@ -393,6 +431,12 @@ Sau practice, Advisor có thể xem:
 * evidence từ transcript;
 * feedback;
 * suggested improvement.
+
+Kết quả ngay sau phiên có trạng thái `AI DRAFT — CHƯA ĐƯỢC MANAGER DUYỆT` và
+không phải đánh giá nhân sự chính thức. Advisor có thể luyện tập lại hoặc gửi
+attempt hiện tại để Manager review. Hệ thống có thể đề xuất một tài liệu hoặc
+scenario tiếp theo từ điểm yếu chính; đây là recommendation đơn, không phải lộ
+trình học tự động nhiều bước.
 
 Nếu feedback liên quan đến factual information:
 
@@ -425,13 +469,15 @@ Advisor có thể xem:
 Recent Sessions
 Previous Feedback
 Basic Skill Summary
+Recommended Next Practice
 ```
 
 ---
 
 ### F12. Manager HITL Review
 
-Session sau khi được AI đánh giá sẽ xuất hiện trong Manager Review Queue.
+Mọi session được lưu trong lịch sử của Advisor, nhưng chỉ attempt được Advisor
+chủ động gửi mới xuất hiện trong Manager Review Queue.
 
 Manager có thể xem:
 
@@ -443,6 +489,8 @@ AI assessment
 Evidence
 
 Feedback
+
+Recommended next practice
 ```
 
 Manager actions:
@@ -451,6 +499,8 @@ Manager actions:
 Approve
 
 Edit score / assessment
+
+Edit recommended next practice
 
 Add note / reason
 ```
@@ -465,7 +515,8 @@ reason
 timestamp
 ```
 
-AI assessment không được coi là đánh giá chính thức của nhân viên trước khi Manager review theo workflow được cấu hình.
+AI assessment không được coi là đánh giá chính thức của nhân viên. Attempt đã
+submit chỉ trở thành kết quả chính thức sau khi Manager review và approve.
 
 ---
 
@@ -515,8 +566,10 @@ End Practice
 Freeze Transcript
    ↓
 Assessment
-   ↓
-Session Review
+       ↓
+Provisional Session Review
+       ↓
+Retry OR Submit selected attempt
 ```
 
 ---
@@ -524,7 +577,7 @@ Session Review
 ## 5.3. Manager Review
 
 ```text
-Completed Session
+Advisor-submitted Attempt
        ↓
 AI Assessment
        ↓
@@ -545,7 +598,7 @@ Approve                     Edit
 
 # 6. P1 — Advanced
 
-## Personalized Recommended Practice
+## Multi-step Personalized Learning Path
 
 Dựa trên lịch sử assessment:
 
@@ -564,6 +617,9 @@ Objection Handling thấp
         ↓
 Recommend Price Objection scenario
 ```
+
+MVP chỉ cần một recommendation trực tiếp từ điểm yếu chính. P1 mở rộng thành lộ
+trình nhiều bước dựa trên lịch sử và kết quả đã được Manager duyệt.
 
 ---
 
@@ -584,6 +640,9 @@ Difficulty có thể thay đổi theo:
 * ambiguity;
 * số objections;
 * mức độ phức tạp của scenario.
+
+Difficulty có thể tăng giữa các attempt. Thay đổi difficulty trong một attempt
+được defer để giữ fairness và khả năng so sánh của assessment.
 
 ---
 
@@ -716,6 +775,8 @@ Acceptance:
 * transcript evidence;
 * strengths;
 * improvement suggestions.
+* trạng thái bản nháp/chính thức;
+* Advisor có thể retry hoặc submit attempt đã chọn.
 
 ---
 
@@ -730,6 +791,7 @@ Acceptance:
 * xem transcript;
 * xem evidence;
 * approve/edit;
+* chỉnh đề xuất luyện tập tiếp theo;
 * edit history được lưu.
 
 ---
@@ -748,8 +810,10 @@ As a Training Manager, I want to see common skill gaps so that I can determine f
 Home
 Practice
 Knowledge
-Progress
 ```
+
+MVP hiển thị lịch sử gần đây và recommendation tiếp theo ngay trên Home/Result.
+Progress Dashboard đầy đủ thuộc P1.
 
 Main actions:
 
@@ -764,12 +828,11 @@ Main actions:
 ## Manager Navigation
 
 ```text
-Overview
-Team
 Reviews
 ```
 
-MVP không cần dashboard phức tạp.
+MVP chỉ cần hàng đợi các attempt do Advisor chủ động submit. Overview và Team
+Analytics thuộc P1.
 
 ---
 
@@ -809,7 +872,9 @@ MVP không cần dashboard phức tạp.
                                         │
                                     AI Judge
                                         │
-                                 Session Review
+                              AI Draft Feedback
+                                        │
+                         Advisor submits chosen attempt
                                         │
                                   Manager HITL
 ```
@@ -861,9 +926,12 @@ Relations:
 ```text
 User
  └── Practice Session
-      ├── Conversation Turns
-      └── Assessment
-           └── Manager Review
+      ├── Conversation Turns (message_id ổn định)
+      └── Assessment (rubric_version, coverage, review_status)
+           ├── Dimension Results + Evidence(message_id)
+           ├── Factual Findings
+           ├── Recommended Next Practice
+           └── Manager Review + Edit Reason
 ```
 
 Knowledge:
@@ -895,7 +963,9 @@ Có thể đánh giá ví dụ:
 Advanced evaluation sử dụng tập transcript được chuyên gia chấm.
 
 ```text
-≥20 transcripts
+Calibration set riêng
+       ↓
+≥20 held-out expert-labelled transcripts cho advanced claim
        ↓
 Expert scores
        ↓
@@ -906,10 +976,18 @@ Compare
 
 Có thể report:
 
-* QWK;
 * MAE;
+* exact agreement;
 * ±1 score agreement;
+* N/A / NOT_OBSERVED agreement;
+* evidence-reference correctness;
+* critical factual miss rate;
+* repeat stability trên fixed transcripts;
+* QWK như metric bổ sung khi sample đủ;
 * disagreement theo từng skill.
+
+Các transcript dùng để tune rubric/prompt không được tính vào held-out result.
+Năm criterion của một transcript không được báo cáo như năm ca độc lập.
 
 ---
 
@@ -1048,6 +1126,8 @@ Session Review
 
 Manager Review / Edit / Approve
 
+Selected-attempt submission
+
 Session History
 ```
 
@@ -1056,7 +1136,7 @@ Session History
 ## P1 — Advanced
 
 ```text
-Personalized Recommended Practice
+Multi-step Personalized Learning Path
 
 Difficulty Progression
 
@@ -1135,6 +1215,8 @@ Have multi-turn conversation with AI Customer
 End session
 
 Receive assessment and feedback
+
+Retry or submit selected attempt for Manager review
 ```
 
 ---
@@ -1144,7 +1226,7 @@ Receive assessment and feedback
 Manager có thể:
 
 ```text
-View assessment
+View Advisor-submitted assessment
 
 View transcript
 
@@ -1155,6 +1237,8 @@ Approve
 Edit
 
 Save review note
+
+Approve/edit recommended next practice
 ```
 
 ---
