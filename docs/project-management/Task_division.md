@@ -10,7 +10,7 @@ Phụ trách business intelligence và conversational behavior của hệ thốn
 - Customer persona
 - Hidden customer state
 - Conversation stages
-- Adaptive objections
+- Scenario objection/disclosure behavior với difficulty cố định trong mỗi attempt
 - Sales conversation strategy
 - Role-play prompts
 - Turn analysis
@@ -66,7 +66,8 @@ Phụ trách business intelligence và conversational behavior của hệ thốn
 ### Build responsibilities
 
 #### 1. RoleplayGraph business flow
-Co-own `RoleplayGraph` với Chương.
+Duy là editor-owner của `RoleplayGraph`; Chương review và cung cấp runtime/tool/
+persistence interfaces để tránh shared-file ownership mơ hồ.
 
 Duy phụ trách business transitions:
 
@@ -89,7 +90,11 @@ continue / finish
  ↓
 evaluate_session
  ↓
-manager_review_pending
+provisional_result
+ ↓
+advisor_retry_or_submit
+ ↓
+manager_review_pending only when submitted
  ↓
 END
 ```
@@ -120,8 +125,8 @@ AI Customer Agent cần:
 - Đưa objections.
 - Phản ứng khác nhau tùy câu trả lời của salesperson.
 - Không reveal hidden information quá sớm.
-- Reveal thông tin khi salesperson hỏi đúng.
-- Thay đổi trust/interest theo conversation.
+- Reveal thông tin theo semantic intent; keyword chỉ là example/test hint.
+- Giữ difficulty cố định trong một attempt.
 - Không tự bịa product hoặc policy information.
 - Dùng shared knowledge tools khi cần factual information.
 - End conversation theo termination conditions.
@@ -164,6 +169,10 @@ Scenario format hỗ trợ:
 - objections
 - difficulty
 - disclosure_rules
+- sales_channel
+- training_objective
+- scenario_version
+- evidence_snapshot_id
 - expected_discovery
 - success_conditions
 - termination_conditions
@@ -197,7 +206,7 @@ Phân tích mỗi salesperson turn để phát hiện:
 
 Output thành structured signals để cập nhật `RoleplayState`.
 
-#### 6. Adaptive Customer logic
+#### 6. Scenario Customer logic
 Implement các transitions:
 
 ```text
@@ -216,6 +225,7 @@ poor objection handling
 
 ```text
 good discovery question
+→ semantic intent được phát hiện
 → relevant hidden fact revealed
 ```
 
@@ -231,6 +241,8 @@ Phụ trách:
 ```text
 POST /practice/sessions
 POST /practice/{id}/message
+POST /practice/{id}/finish
+POST /practice/{id}/submit-review
 ```
 
 Implement:
@@ -256,6 +268,16 @@ backend/services/practice_service.py
 - generate next customer response
 - return customer response + session status
 
+`POST /practice/{id}/finish`:
+- persist final turn and freeze transcript idempotently
+- invoke evaluator once for the transcript/rubric version
+- return provisional result or retryable evaluation status
+
+`POST /practice/{id}/submit-review`:
+- validate session ownership and completed evaluation
+- create one pending Manager review for the selected attempt
+- remain idempotent for duplicate requests
+
 Persistence mechanism do Chương cung cấp.
 
 #### 8. Evaluator / Coaching behavior
@@ -274,10 +296,14 @@ Evaluation input:
 
 Evaluation output:
 - criterion
-- score
-- evidence
+- status (`ASSESSED`, `NOT_OBSERVED`, `INSUFFICIENT_EVIDENCE`)
+- nullable score
+- observable checks
+- turn IDs + exact quotes
 - reason
 - improvement suggestion
+- separated factual findings
+- one recommended next practice/document
 
 Áp dụng cho:
 - Need Discovery
@@ -334,13 +360,14 @@ Duy phụ trách:
 - conversation strategy
 - scenario runtime semantics
 - RoleplayState business semantics
-- adaptive objections
+- scenario objection/disclosure transitions
 - customer-turn logic
 - turn-analysis logic
 - role-play prompts
 - evaluation reasoning
 - coaching logic
 - practice start/message backend
+- practice finish/result/submit-review business lifecycle
 
 Cần phối hợp với Chương trước khi thay đổi:
 - shared FastAPI setup
@@ -615,7 +642,6 @@ Chương phụ trách:
 POST /copilot/query
 GET  /copilot/sources/{id}
 
-POST /practice/{id}/finish
 GET  /practice/{id}/evaluation
 
 GET   /manager/reviews
@@ -638,6 +664,7 @@ Phụ trách:
 - evaluation retrieval API
 - manager-review persistence
 - manager-review API
+- authorization, idempotency and audit persistence for review submission/approval
 
 Flow:
 
@@ -938,7 +965,7 @@ Tạo benchmark:
 Initial benchmark:
 
 ```text
-20–30+ grounded questions
+50 cases: 30 real on-topic + 15 off-topic/adversarial + 5 edge cases
 ```
 
 #### 6. RAG evaluation
@@ -954,24 +981,32 @@ Chạy trên Copilot implementation của Chương.
 
 #### 7. Role-play benchmark
 Tạo tests:
-- persona consistency
-- objection consistency
-- hidden-information disclosure
-- conversation-stage behavior
-- adaptive response behavior
-- difficulty behavior
-- policy grounding
-- termination behavior
+- T1 direct discovery
+- T2 paraphrased discovery
+- T3 supported objection handling
+- T4 unsupported confident claim
+- T5 prompt leakage / role reversal
+- T6 explicit finish và max-turn lifecycle
+
+Mỗi case là fixture có advisor messages cố định và expected state events. Runner
+không dùng một AI advisor khác trong regression chính và không assert exact customer
+wording. Naturalness/role consistency được chấm riêng trên transcript output.
 
 Chạy cùng Duy.
 
 #### 8. Judge / evaluator calibration
 Chuẩn bị expert-labelled transcripts.
 
-Initial target:
+Calibration set ban đầu, không tính vào held-out result:
 
 ```text
-≥20 annotated cases
+5 annotated transcripts
+```
+
+Advanced held-out target:
+
+```text
+≥20 additional expert-labelled transcripts
 ```
 
 Với mỗi rubric criterion:
@@ -982,9 +1017,14 @@ Với mỗi rubric criterion:
 
 Metrics:
 - MAE
+- exact agreement
+- ±1 agreement
+- applicability / NOT_OBSERVED agreement
+- evidence-reference correctness
+- critical factual miss rate
+- repeat stability
 - criterion-level agreement
-- weighted agreement
-- rank correlation
+- weighted agreement/QWK chỉ là metric bổ sung khi sample đủ
 
 #### 9. HITL evaluation
 Phân tích:
@@ -1112,7 +1152,7 @@ Phụ trách:
 - Practice Room
 - Session Results
 - History
-- Progress Dashboard
+- Basic session history; Progress Dashboard sau MVP
 - Manager Review
 - frontend API integration
 - frontend telemetry
@@ -1133,7 +1173,7 @@ WIREFRAME_UI_FLOW.md
 - Practice Room
 - Session Result
 - History
-- Progress
+- Progress (P1; Gate 1 mô tả nhưng không nằm trong MVP navigation)
 - Manager Review
 - score-editing flow
 - approval flow
@@ -1162,7 +1202,7 @@ Cung cấp:
 - Copilot
 - Practice
 - History
-- Progress
+- one next-practice recommendation
 
 #### 3. Copilot UI
 Implement:
@@ -1191,7 +1231,7 @@ Hiển thị:
 - difficulty
 - training objective
 - target skills
-- estimated duration
+- optional duration hint; backend turn limit là safety cap, không phải skill score
 
 Start session bằng:
 
@@ -1230,10 +1270,13 @@ Hiển thị:
 - Closing / Next Step
 
 Với mỗi criterion:
-- score
-- evidence
+- status + nullable score
+- turn IDs + exact quotes
 - reason
 - improvement suggestion
+
+Hiển thị riêng factual findings và trạng thái `AI draft`. Advisor có thể retry hoặc
+submit attempt hiện tại; chỉ submit mới tạo Manager review.
 
 Cung cấp transcript view.
 
@@ -1247,6 +1290,7 @@ Implement:
 - Manager Score Editing
 - Manager Notes
 - Approve
+- Edit recommended next practice
 
 Integrate:
 
@@ -1255,7 +1299,7 @@ GET /manager/reviews
 PATCH /manager/reviews/{id}
 ```
 
-#### 8. Progress Dashboard
+#### 8. Progress Dashboard (sau MVP)
 Hiển thị:
 - sessions completed
 - scores over time
@@ -1341,9 +1385,9 @@ Không tự ý thay đổi:
 | Customer behavior | Duy | Chương |
 | Scenario runtime logic | Duy | Đạt |
 | Conversation stages | Duy | Chương |
-| Adaptive objections | Duy | Đạt |
+| Scenario objection/disclosure transitions | Duy | Đạt |
 | RoleplayState semantics | Duy | Chương |
-| `RoleplayGraph` | Duy + Chương | — |
+| `RoleplayGraph` editor-owner | Duy | Chương review/runtime integration |
 | Customer-turn node | Duy | Chương |
 | Turn-analysis node | Duy | Chương |
 | State-transition logic | Duy | Chương |
@@ -1357,8 +1401,8 @@ Không tự ý thay đổi:
 | Evaluation persistence | Chương | Duy |
 | Practice start API | Duy | Chương |
 | Practice message API | Duy | Chương |
-| Practice finish API | Chương | Duy |
-| Evaluation result API | Chương | Duy |
+| Practice finish/result/submit-review business flow | Duy | Chương |
+| Evaluation persistence/result API | Chương | Duy |
 | Practice Room UI | An | Duy |
 | Result UI | An | Duy + Đạt |
 
@@ -1404,7 +1448,7 @@ Không tự ý thay đổi:
 | Shared knowledge tools | Chương | Duy |
 | Role-play checkpointing | Chương | Duy |
 | Role-play persistence | Chương | Duy |
-| Practice business API | Duy | Chương |
+| Practice business API incl. finish/submit semantics | Duy | Chương |
 | Manager API | Chương | An |
 | API contract | Chương + An | Duy |
 | Frontend integration | An | Chương + Duy |
@@ -1459,7 +1503,7 @@ Không tự ý thay đổi:
 | Phase | Duy | Chương | Đạt | An |
 |---|---|---|---|---|
 | **Gate 1** | Product + Role-play specification | Copilot + architecture | Data + evaluation plan | Wireframe/UI Flow |
-| **Walking Skeleton** | Basic RoleplayGraph + Practice API | Platform + graph runtime + persistence | Test fixtures | React shell + mocks |
+| **Walking Skeleton** | Basic RoleplayGraph + complete Practice lifecycle | Platform + graph runtime integration + persistence | Test fixtures | React shell + mocks |
 | **Knowledge Layer** | Role-play knowledge requirements | Chunking + embeddings + vector store + RAG runtime | Corpus preparation + ingestion + metadata validation | Source/citation UI |
 | **Copilot** | Sales behavior support | Copilot lead | Copilot benchmark | Copilot UI |
 | **Role-play** | AI Customer lead | Runtime/tools/checkpoint/persistence | Scenario dataset | Practice Room |
@@ -1492,7 +1536,8 @@ backend/
     └── practice_service.py
 ```
 
-`roleplay/graph.py` là shared file với Chương.
+`roleplay/graph.py` do Duy làm editor-owner; Chương review các boundary liên quan
+runtime, checkpoint, persistence và shared tools.
 
 ## Chương
 

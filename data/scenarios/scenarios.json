@@ -3,6 +3,9 @@
     "scenario_id": "SCENARIO_01_VF5_TAXI",
     "title": "Bác tài chạy dịch vụ cân nhắc đổi từ xe xăng sang VF 5 Plus",
     "difficulty": "Medium",
+    "sales_channel": "Fanpage",
+    "training_objective": "Khai thác cường độ sử dụng và xử lý băn khoăn về tổng chi phí cùng thời gian sạc bằng thông tin có nguồn.",
+    "scenario_version": "2.0",
     "target_skills": ["Need Discovery", "Objection Handling", "Closing"],
     "persona": {
       "name": "Anh Nam",
@@ -37,19 +40,19 @@
         "objection_id": "OBJ_VF5_BATTERY_VS_GAS",
         "trigger_stage": "presentation",
         "objection_text": "Nghe anh em bảo tiền thuê pin với tiền sạc điện tính ra cũng bằng tiền xăng, vậy đổi làm gì cho tốn tiền mua xe hả em?",
-        "resolve_condition": "Tư vấn viên phải đưa ra bài toán so sánh chi phí cụ thể: xăng Vios (~1.600đ/km) và tiền điện + thuê pin VF 5 (~980đ/km) khi chạy 5.000km/tháng.",
-        "ideal_sales_response": "Dạ em hiểu băn khoăn của anh Nam. Nhưng anh chạy 5.000km/tháng thì xe điện là mỏ vàng luôn ạ: Gói thuê pin trên 3.000km là 2,7 triệu, tiền điện sạc khoảng 2,2 triệu. Tổng chi phí chỉ tầm 4,9 triệu/tháng (~980đ/km). Trong khi con Vios ăn 7L xăng/100km thì 5.000km anh tốn hơn 8 triệu tiền xăng. Mỗi tháng anh đút túi thêm hơn 3 triệu tiền chênh lệch nhiên liệu rồi ạ!"
+        "resolve_condition": "Tư vấn viên ghi nhận băn khoăn, xác nhận quãng đường sử dụng, chỉ dùng giá/chính sách còn hiệu lực từ nguồn được cung cấp để lập phép so sánh có nêu giả định; nếu thiếu dữ liệu thì hỏi thêm hoặc nói chưa thể kết luận.",
+        "ideal_sales_response": "Một phản hồi đạt yêu cầu cần giải thích cách so sánh tổng chi phí theo nhu cầu 5.000 km/tháng, nêu rõ đầu vào và nguồn cho từng khoản, tránh hứa chắc mức tiết kiệm khi chưa đủ dữ liệu, rồi kiểm tra xem băn khoăn của khách đã được giải quyết chưa."
       },
       {
         "objection_id": "OBJ_VF5_CHARGING_TIME",
         "trigger_stage": "closing",
         "objection_text": "Giữa trưa nắng chạy khách mệt mỏi mà phải xếp hàng sạc 1-2 tiếng thì mất hết cuốc em ơi.",
-        "resolve_condition": "Tư vấn viên phải chỉ ra trạm sạc nhanh DC 30 phút là sạc được 70%, kết hợp nghỉ trưa ăn cơm.",
-        "ideal_sales_response": "Dạ anh không phải chờ sạc 1-2 tiếng đâu ạ! Trạm sạc nhanh DC của V-GREEN sạc từ 10% lên 70% chỉ mất đúng 30 phút. Trưa anh ghé trạm cắm sạc vào quán cơm ăn trưa nghỉ lưng 30 phút quay ra là xe lại đầy pin chạy phà phà đến tối rồi anh nhé."
+        "resolve_condition": "Tư vấn viên hỏi thêm về lịch chạy và điểm sạc khả dụng, dùng thông số sạc có nguồn với điều kiện áp dụng rõ ràng, đồng thời đề xuất cách kiểm chứng thực tế thay vì bảo đảm một thời gian sạc cố định.",
+        "ideal_sales_response": "Một phản hồi đạt yêu cầu cần thừa nhận chi phí cơ hội khi dừng sạc, đối chiếu lịch chạy với lựa chọn sạc phù hợp, nêu rằng thời gian thực tế phụ thuộc trụ, mức pin và điều kiện vận hành, rồi đề xuất kiểm tra trạm hoặc trải nghiệm sạc."
       }
     ],
     "expected_discovery": "Nhân viên phải khai thác được số km đi lại mỗi ngày (180-200 km) và khả năng tài chính trả trước (150 triệu) để đưa ra gói vay và gói pin phù hợp.",
-    "success_conditions": "Tư vấn viên khai thác được số km đi lại, giải bài toán chi phí tiết kiệm hơn xe xăng và mời được khách trải nghiệm sạc nhanh và lái thử thực tế.",
+    "success_conditions": "Tư vấn viên khai thác được quãng đường và khả năng tài chính, so sánh chi phí bằng dữ liệu có nguồn hoặc chủ động nói chưa đủ dữ liệu, xử lý lo ngại thời gian sạc và thống nhất một bước tiếp theo phù hợp.",
     "termination_conditions": {
       "max_turns": 8,
       "drop_out_trigger": "Nếu tư vấn viên báo giá sai hoặc 3 lượt liên tiếp không trả lời được băn khoăn về chi phí sạc pin."
@@ -59,6 +62,9 @@
     "scenario_id": "SCENARIO_02_VF7_VS_CX5",
     "title": "Khách hàng gia đình so sánh VF 7 Plus với Mazda CX-5",
     "difficulty": "Hard",
+    "sales_channel": "Tin nhắn tư vấn",
+    "training_objective": "Khám phá nhu cầu gia đình và người cùng ra quyết định, sau đó so sánh giá trị mà không hạ thấp đối thủ hoặc đưa ra cam kết khấu hao thiếu căn cứ.",
+    "scenario_version": "2.0",
     "target_skills": ["Product Knowledge", "Objection Handling", "Closing"],
     "persona": {
       "name": "Chị Thanh",
@@ -93,19 +99,19 @@
         "objection_id": "OBJ_VF7_PRICE_VS_CX5",
         "trigger_stage": "presentation",
         "objection_text": "CX-5 đi đầy đường vừa lành vừa đẹp, VF 7 mới ra chưa biết thế nào mà bán đắt thế em?",
-        "resolve_condition": "Tư vấn viên phải chỉ ra được 3 luận điểm: Động cơ 349 mã lực 2 cầu AWD, trục cơ sở 2.840mm rộng hơn 14cm và tiền điện rẻ bằng 1/3 tiền xăng.",
-        "ideal_sales_response": "Dạ CX-5 là mẫu xe rất giữ dáng trong tầm giá chị ạ. Tuy nhiên VF 7 Plus nhỉnh hơn khoảng 50 triệu vì sở hữu động cơ 349 mã lực 2 cầu AWD (mạnh gấp đôi CX-5 chỉ 154 mã lực), trục cơ sở dài hơn 14 cm giúp hàng ghế 2 rộng rãi vượt trội, và chi phí sạc điện cực rẻ giúp bù đắp hoàn toàn 50 triệu chênh lệch chỉ sau hơn 1 năm chạy thôi chị."
+        "resolve_condition": "Tư vấn viên hỏi tiêu chí ưu tiên, so sánh trung lập các thuộc tính liên quan bằng nguồn hiện hành, gắn khác biệt với nhu cầu gia đình và không tự khẳng định thời gian hoàn vốn khi chưa có dữ liệu sử dụng.",
+        "ideal_sales_response": "Một phản hồi đạt yêu cầu cần công nhận lựa chọn cạnh tranh, hỏi điều gì quan trọng với gia đình, chọn một vài khác biệt có nguồn để giải thích giá trị và tránh dùng claim kiểu 'bù chênh lệch sau một năm' nếu chưa lập được phép tính có căn cứ."
       },
       {
         "objection_id": "OBJ_VF7_DEPRECIATION",
         "trigger_stage": "closing",
         "objection_text": "Chồng chị bảo xe điện mua thì đắt mà sau 3 năm bán lại khéo lỗ nửa giá xe, không giữ giá bằng CX-5.",
-        "resolve_condition": "Tư vấn viên phải giải thích chính sách bảo hành 10 năm của VinFast và khoản tiền tiết kiệm nhiên liệu bù đắp khấu hao xe.",
-        "ideal_sales_response": "Dạ em rất hiểu suy nghĩ của anh nhà ạ. Nhưng thực tế VinFast bảo hành xe lên tới 10 năm (gấp đôi xe xăng chỉ 3-5 năm). Sau 3 năm, số tiền xăng chị tiết kiệm được đã lên tới gần 100 triệu đồng rồi, phần tiết kiệm này thừa sức bù đắp khấu hao xe. Cuối tuần này em mang xe VF 7 qua tận nhà cho anh chị lái thử cảm nhận trực tiếp nhé!"
+        "resolve_condition": "Tư vấn viên không hứa giá bán lại hoặc khoản tiết kiệm tương lai; tách chính sách bảo hành có nguồn khỏi dự đoán khấu hao, ghi nhận vai trò của người cùng quyết định và đề xuất bước xác minh phù hợp cho cả hai.",
+        "ideal_sales_response": "Một phản hồi đạt yêu cầu cần thừa nhận rằng giá bán lại không thể được bảo đảm, chỉ trình bày chính sách bảo hành nếu có nguồn hiện hành, và mời cả hai người tham gia một bước tiếp theo như xem tài liệu hoặc lái thử."
       }
     ],
     "expected_discovery": "Nhân viên phải khai thác được thành phần gia đình sử dụng xe và ai là người có tiếng nói quyết định cuối cùng trong gia đình.",
-    "success_conditions": "Tư vấn viên giải thích trọn vẹn lý do chênh lệch 50 triệu và chốt được lịch mang xe VF 7 qua tận nhà cho 2 vợ chồng cùng lái thử.",
+    "success_conditions": "Tư vấn viên khám phá nhu cầu sử dụng và người cùng ra quyết định, so sánh trung lập bằng bằng chứng, không cam kết khấu hao và đề xuất một bước tiếp theo phù hợp cho cả hai vợ chồng.",
     "termination_conditions": {
       "max_turns": 10,
       "drop_out_trigger": "Nếu tư vấn viên chê bai dìm hàng CX-5 thô thiển hoặc không chứng minh được giá trị xe."
@@ -115,6 +121,9 @@
     "scenario_id": "SCENARIO_03_VF6_APARTMENT",
     "title": "Gia đình ở chung cư lo lắng hạ tầng sạc pin cho VF 6",
     "difficulty": "Easy",
+    "sales_channel": "Chat trực tuyến",
+    "training_objective": "Khai thác quãng đường và khả năng tiếp cận điểm sạc để xử lý lo ngại sạc tại chung cư bằng phương án có thể kiểm chứng.",
+    "scenario_version": "2.0",
     "target_skills": ["Need Discovery", "Objection Handling"],
     "persona": {
       "name": "Anh Tuấn",
@@ -149,12 +158,12 @@
         "objection_id": "OBJ_VF6_APARTMENT_CHARGING",
         "trigger_stage": "presentation",
         "objection_text": "Đi làm cả ngày mệt mỏi về tối lại phải lang thang đi tìm trụ sạc thì bất tiện quá em.",
-        "resolve_condition": "Tư vấn viên chỉ ra xe đi được gần 400km, với nhu cầu 15km/ngày thì 2 tuần mới phải sạc 1 lần khi đi siêu thị cuối tuần.",
-        "ideal_sales_response": "Dạ anh Tuấn ơi mình không cần sạc mỗi ngày như điện thoại đâu ạ! Xe VF 6 đi được tới 381 km/lần sạc, mỗi ngày anh đi 15 km thì phải 2 tuần anh mới cần sạc 1 lần. Cuối tuần anh chở vợ con đi siêu thị Vincom gần nhà cắm sạc nhanh 25 phút là xe lại đầy pin chạy tiếp nửa tháng rồi anh nhé!"
+        "resolve_condition": "Tư vấn viên khai thác quãng đường và khu vực sinh sống, dùng phạm vi hoạt động và dữ liệu điểm sạc có nguồn để ước lượng phương án, nêu các giả định và hướng dẫn khách kiểm tra trạm thay vì bảo đảm lịch sạc cố định.",
+        "ideal_sales_response": "Một phản hồi đạt yêu cầu cần giải thích rằng tần suất sạc phụ thuộc mức sử dụng và điều kiện thực tế, dùng dữ liệu có nguồn để minh họa sau khi đã biết quãng đường, rồi đề xuất kiểm tra tình trạng trạm gần nhà hoặc phương án dự phòng."
       }
     ],
     "expected_discovery": "Nhân viên phải hỏi về khoảng cách đi lại trung bình và vị trí sinh sống để chỉ ra điểm sạc công cộng tiện lợi gần nhà.",
-    "success_conditions": "Giải tỏa được nỗi sợ sạc xe hàng ngày và hướng dẫn khách sử dụng trạm sạc nhanh gần nhà.",
+    "success_conditions": "Tư vấn viên khai thác quãng đường và khu vực, giải thích phương án sạc bằng dữ liệu có nguồn, không hứa thời gian hay tần suất cố định và giúp khách xác minh điểm sạc phù hợp.",
     "termination_conditions": {
       "max_turns": 6,
       "drop_out_trigger": "Nếu tư vấn viên bỏ qua câu hỏi sạc mà chuyển sang ép chốt cọc."

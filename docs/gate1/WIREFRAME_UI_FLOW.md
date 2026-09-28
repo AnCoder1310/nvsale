@@ -72,8 +72,8 @@ Quản lý đào tạo       → Danh sách đánh giá
 │             │ └──────────────────┘ └───────────────────┘ │
 │             │                                             │
 │             │ Phiên luyện tập gần đây                     │
-│             │ Tình huống A       78        20/09         │
-│             │ Tình huống B       82        18/09         │
+│             │ Tình huống A       4.0/5  Đã duyệt        │
+│             │ Tình huống B       Bản nháp               │
 └─────────────┴─────────────────────────────────────────────┘
 ```
 
@@ -172,11 +172,12 @@ Sau khi chọn:
 ┌───────────────────────────────────────────────┐
 │ Tình huống A                                  │
 │                                               │
-│ Khách hàng                                    │
-│ • Thông tin cơ bản về khách hàng              │
+│ Bối cảnh đã biết                              │
+│ • Kênh: Zalo / showroom / cuộc gọi            │
+│ • Giai đoạn và thông tin khách đã chủ động nêu│
 │                                               │
 │ Mục tiêu của bạn                              │
-│ • Thực hiện cuộc tư vấn                       │
+│ • Khám phá nhu cầu và thống nhất bước phù hợp │
 │                                               │
 │ Các kỹ năng luyện tập                         │
 │ • Kỹ năng 1                                   │
@@ -196,6 +197,11 @@ Quy tắc tiết lộ thông tin của khách hàng
 Prompt nội bộ của AI Customer
 ```
 
+Không đưa một hidden fact vào phần “Bối cảnh đã biết” rồi tiếp tục chấm Need
+Discovery vì advisor không hỏi lại fact đó. Độ khó được chọn trước phiên và giữ
+cố định trong attempt. Thời lượng chỉ là gợi ý; backend dùng turn limit như safety
+cap, không dùng việc chạm giới hạn làm điểm kỹ năng.
+
 ---
 
 # 6. Phòng luyện tập
@@ -209,8 +215,8 @@ AI đóng vai khách hàng và hội thoại nhiều lượt với tư vấn vi�
 │ Khách hàng A    │ 👤 Khách hàng                           │
 │                 │ "Tôi đang cân nhắc nhưng..."           │
 │ Thông tin       │                                         │
-│ • mua xe gia đình│                      Bạn               │
-│ • có băn khoăn  │ "..."                                   │
+│ • Kênh: Zalo    │                      Bạn               │
+│ • Quan tâm VF 6 │ "..."                                   │
 │                 │                                         │
 │                 │ 👤 Khách hàng                           │
 │                 │ "..."                                   │
@@ -254,11 +260,12 @@ Sau đó:
 ┌──────────────────────────────────────────────────────────┐
 │ KẾT QUẢ PHIÊN LUYỆN TẬP                                 │
 │                                                          │
-│ Tổng điểm                              78 / 100           │
+│ BẢN NHÁP AI — CHƯA ĐƯỢC MANAGER DUYỆT                    │
+│ Đã đánh giá                            4 / 5 kỹ năng      │
 │                                                          │
 │ Kỹ năng 1                             4 / 5               │
 │ Kỹ năng 2                             3 / 5               │
-│ Kỹ năng 3                             4 / 5               │
+│ Kỹ năng 3                    Chưa quan sát đủ             │
 │                                                          │
 │ ĐIỂM LÀM TỐT                                            │
 │ ✓ Ví dụ bằng chứng tại lượt hội thoại 4                 │
@@ -269,7 +276,9 @@ Sau đó:
 │ Gợi ý cải thiện                                          │
 │ Feedback ngắn từ hệ thống                                │
 │                                                          │
-│                        [ Luyện tập lại ]                  │
+│ Gợi ý tiếp theo: [Tài liệu / Tình huống]                 │
+│                                                          │
+│ [ Luyện tập lại ]       [ Gửi attempt này để review ]    │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -280,7 +289,12 @@ Nguồn tham chiếu
 [Xem nguồn]
 ```
 
-Tên và định nghĩa cụ thể của từng kỹ năng sẽ được xác định sau.
+Mỗi điểm/nhận định mở được turn và exact quote liên quan. Factual finding hiển
+thị riêng với trạng thái `Được nguồn hỗ trợ`, `Mâu thuẫn với nguồn` hoặc `Chưa
+đủ nguồn xác minh`.
+
+Chỉ nút **Gửi attempt này để review** mới tạo item trong hàng đợi Manager. Retry
+không tự động gửi mọi lần luyện tập cho Manager.
 
 ---
 
@@ -300,7 +314,7 @@ Tên và định nghĩa cụ thể của từng kỹ năng sẽ được xác đ
 
 # 9. Quản lý — Xem đánh giá
 
-Manager xem transcript và kết quả AI tạo.
+Manager xem transcript và bản nháp AI của attempt mà Advisor đã chủ động gửi.
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
@@ -313,9 +327,10 @@ Manager xem transcript và kết quả AI tạo.
 │ │ ...                  │   │ Kỹ năng 3          4/5   │ │
 │ └──────────────────────┘   │                           │ │
 │                            │ Bằng chứng: Lượt 4, 8     │ │
+│                            │ Gợi ý tiếp theo: [...]    │ │
 │                            └───────────────────────────┘ │
 │                                                          │
-│ [ Phê duyệt ]                  [ Chỉnh sửa ]              │
+│ [ Phê duyệt ]          [ Chỉnh sửa điểm/feedback/gợi ý ] │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -328,7 +343,7 @@ Nếu Manager chỉnh sửa:
 Lý do:
 [____________________________]
 
-[Lưu]
+[Lưu thay đổi và phê duyệt]
 ```
 
 Hệ thống lưu:
@@ -368,11 +383,12 @@ J --> K[Xem tình huống]
 K --> L[Hội thoại với AI Customer]
 
 L --> N[Kết thúc phiên]
-N --> O[Tạo đánh giá]
-O --> P[Xem kết quả]
-P --> Q[Lưu phiên]
+N --> O[Lưu/freeze transcript]
+O --> P[Tạo và lưu bản nháp AI]
+P --> Q[Xem kết quả]
 
-Q --> R[Hàng đợi Manager review]
+Q -->|Luyện tập lại| J
+Q -->|Gửi attempt đã chọn| R[Hàng đợi Manager review]
 
 M --> R
 R --> S[Xem hội thoại + đánh giá]
@@ -395,6 +411,7 @@ Tra cứu bằng Trợ lý kiến thức
 Chọn tình huống luyện tập
 Hội thoại nhiều lượt với AI Customer
 Xem kết quả phiên luyện tập
+Luyện tập lại hoặc gửi attempt đã chọn để review
 Xem các phiên gần đây
 ```
 
@@ -414,7 +431,8 @@ RAG + trích dẫn nguồn
 Metadata / version tài liệu
 Bộ nhớ hội thoại nhiều lượt
 AI Customer
-Tạo đánh giá sau phiên luyện tập
+Tạo đánh giá có status + evidence sau phiên luyện tập
+Tách factual findings khỏi feedback kỹ năng
 Lưu kết quả Manager review
 Knowledge corpus được team chuẩn bị sẵn
 ```
@@ -426,7 +444,7 @@ Knowledge corpus được team chuẩn bị sẵn
 Các chức năng sau chuyển sang giai đoạn sau:
 
 ```text
-Tự động đề xuất bài luyện tập cá nhân hóa
+Lộ trình học cá nhân hóa nhiều bước
 Dashboard xu hướng kỹ năng
 Phân tích toàn đội
 Know-vs-Do Matrix

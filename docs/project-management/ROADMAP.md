@@ -16,8 +16,8 @@
 | **25–26/09** | Core AI | Copilot RAG v1 + Role-play multi-turn v1 chạy thật |
 | **27–28/09** | Product Loop | Practice → Finish → Evaluate → Result chạy end-to-end |
 | **29/09** | Feature Freeze | Không thêm major feature; chỉ integration, bug fix, deployment |
-| **30/09** | MVP Release | Deployed product dùng được từ đầu đến cuối |
-| **01–02/10** | Product Complete | HITL, benchmark, hardening, progress/history, polish |
+| **30/09** | MVP Release | Deployed product chạy đủ Copilot + Practice + selected-attempt HITL |
+| **01–02/10** | Product Complete | Benchmark, hardening, history, tester readiness và polish |
 | **03/10** | Sales Tester Release | Sales tester nhận URL + task + feedback form |
 
 ---
@@ -34,7 +34,7 @@ RoleplayState schema
 Scenario schema
 AI Customer behavior contract
 conversation stages
-adaptive objection rules
+scenario objection/disclosure rules
 disclosure rules
 termination rules
 5-dimension rubric skeleton
@@ -117,13 +117,11 @@ select scenario
 ---
 
 ## Checkpoint D3 — 25–26/09
-### Mục tiêu: Adaptive Customer v1
+### Mục tiêu: Scenario behavior v1 với difficulty cố định
 
 Implement:
 
 ```text
-trust_level
-interest_level
 active_objections
 resolved_objections
 unresolved_objections
@@ -135,11 +133,11 @@ Behavior:
 
 ```text
 good discovery question
-→ reveal relevant hidden fact
+→ semantic intent được nhận diện
+→ reveal relevant hidden fact, không yêu cầu exact keyword
 
 good objection handling
 → resolve objection
-→ increase trust
 
 poor objection handling
 → objection remains
@@ -161,6 +159,8 @@ get_product_comparison()
 ### Acceptance
 - AI Customer phản ứng khác nhau với câu trả lời tốt/xấu.
 - Có thể resolve/unresolve objection.
+- Difficulty không tự thay đổi trong một attempt.
+- Câu hỏi paraphrase hợp lệ có thể reveal cùng fact như câu hỏi trực tiếp.
 - Có factual lookup khi scenario cần policy/product fact.
 - Không hard-code product facts riêng trong role-play.
 
@@ -179,8 +179,10 @@ Output mỗi criterion:
 
 ```text
 criterion
+status
 score
-evidence
+observable checks
+turn IDs + exact quotes
 reason
 improvement_suggestion
 ```
@@ -193,8 +195,11 @@ Evaluator chạy trên:
 - relevant knowledge evidence
 
 ### Acceptance
-- Session finish có thể sinh 5 criterion scores.
-- Mỗi score có evidence.
+- Session finish sinh result cho 5 criterion; criterion không có cơ hội hợp lý dùng
+  `NOT_OBSERVED` và score `null`.
+- Mỗi assessed score có turn ID + exact quote đã validate.
+- Factual findings tách `SUPPORTED`, `CONTRADICTED`, `UNVERIFIABLE`.
+- Overall score do code tính trên criterion đã assessed.
 - Output đúng schema để Chương persist và An render.
 - Đạt có thể chạy benchmark trên evaluator.
 
@@ -208,7 +213,7 @@ Run full flow:
 ```text
 Scenario Selection
 → Practice
-→ 5–10 turns
+→ bounded multi-turn conversation
 → Finish
 → Evaluation
 → Results
@@ -239,7 +244,9 @@ Role-play MVP phải có:
 ✓ choose scenario
 ✓ multi-turn AI Customer
 ✓ persistent context
-✓ adaptive response
+✓ scenario-consistent response
+✓ semantic disclosure
+✓ fixed difficulty per attempt
 ✓ knowledge lookup
 ✓ finish session
 ✓ evaluator
@@ -253,14 +260,14 @@ Role-play MVP phải có:
 
 Hoàn thiện:
 - Better persona consistency.
-- Better difficulty behavior.
+- Better scenario behavior at each configured difficulty.
 - Better objection escalation.
 - Better termination logic.
 - Improve evaluator prompt.
 - Fix benchmark failures.
 - Add more realistic scenarios.
 - Improve coaching feedback.
-- Support manager-reviewed score flow.
+- Fix selected-attempt Manager review issues found after MVP.
 
 ### Acceptance
 - Không còn P0/P1 bug trên role-play.
@@ -594,16 +601,12 @@ Support:
 ## Checkpoint Đ3 — 25–26/09
 ### Mục tiêu: Copilot benchmark + Eval runner v1
 
-Tạo 20–30 câu benchmark:
+Tạo 50 câu benchmark theo Build Guide:
 
 ```text
-single-product facts
-product comparison
-promotion
-current policy
-expired policy
-battery
-unsupported query
+30 real on-topic questions
+15 off-topic / unsupported / prompt-injection questions
+5 edge cases, including conflicting or version-sensitive evidence
 ```
 
 Implement:
@@ -620,6 +623,7 @@ Metrics v1:
 - Recall@K
 - citation correctness
 - policy-version correctness
+- appropriate abstention / clarification
 
 ### Acceptance
 - Có thể chạy benchmark bằng command/script.
@@ -632,17 +636,21 @@ Metrics v1:
 ### Mục tiêu: Role-play benchmark + Judge calibration v1
 
 Tạo Role-play tests:
-- persona consistency
-- hidden information disclosure
-- objection consistency
-- adaptive behavior
-- policy grounding
-- termination behavior
+- T1 direct discovery
+- T2 paraphrased discovery
+- T3 supported objection handling
+- T4 unsupported confident claim
+- T5 prompt leakage / role reversal
+- T6 explicit finish và max-turn lifecycle
+
+Các test là fixture trajectories với advisor messages cố định. Runner gửi từng
+message qua runtime thật và assert state event/transition; không so exact wording
+của customer response và không dùng một AI advisor khác trong regression chính.
 
 Chuẩn bị evaluator labelled set ban đầu:
 
 ```text
-10+ annotated transcripts
+5 calibration transcripts tách khỏi held-out benchmark
 ```
 
 Implement:
@@ -655,6 +663,7 @@ eval/report_generator.py
 
 ### Acceptance
 - Có automated Role-play test runner.
+- T1–T6 có machine-readable assertions cho disclosure, objection, role và lifecycle.
 - Có judge MAE / criterion agreement cơ bản.
 - `eval/reports/latest.md` sinh tự động.
 
@@ -689,7 +698,8 @@ eval/reports/latest.md
 
 ### Acceptance
 - Duy và Chương có danh sách lỗi cụ thể cần fix trước MVP.
-- Không còn P0 chưa được assign owner.
+- Mọi P0 phải được fix hoặc feature liên quan bị loại khỏi release; chỉ assign owner
+  chưa đủ để pass gate.
 
 ---
 
@@ -714,10 +724,10 @@ eval/reports/latest.md
 ## Checkpoint Đ7 — 01–02/10
 ### Mục tiêu: Final evaluation + tester preparation
 
-Tăng evaluator set lên:
+Chuẩn bị held-out evaluator set cho advanced claim:
 
 ```text
-≥20 annotated cases
+≥20 expert-labelled transcripts, không tính calibration cases
 ```
 
 Chạy:
@@ -728,6 +738,11 @@ Chạy:
 - Role-play behavioral tests.
 - Judge MAE.
 - Criterion-level agreement.
+- Exact và ±1 agreement.
+- NOT_OBSERVED agreement.
+- Evidence-reference correctness.
+- Critical factual miss rate.
+- Repeat stability trên fixed transcripts.
 
 Chuẩn bị:
 - tester task list
@@ -756,9 +771,11 @@ Scenario Selection
 Practice Room
 Session Result
 History
-Progress
 Manager Review
 ```
+
+Progress Dashboard đầy đủ thuộc P1; MVP chỉ hiển thị lịch sử gần đây và một
+next-practice recommendation trên Home/Session Result.
 
 Implement skeleton:
 
@@ -772,7 +789,7 @@ mock data
 ```
 
 ### Acceptance
-- Tất cả core page route tồn tại.
+- Tất cả MVP core page route tồn tại.
 - Có mock navigation.
 - API contract đã sync với Duy/Chương.
 
@@ -844,10 +861,14 @@ Practice Room:
 
 Implement Session Result:
 - 5 rubric dimensions
-- score
-- evidence
+- assessed / not-observed / insufficient-evidence status
+- nullable score
+- turn IDs + exact quotes
+- factual findings riêng
 - reason
 - improvement suggestion
+- AI draft status
+- retry + submit selected attempt
 - transcript
 
 Implement Manager Review:
@@ -856,10 +877,12 @@ Implement Manager Review:
 - edit score
 - note
 - approve
+- edit recommended next practice
 
 ### Acceptance
 - Full practice loop hiện được trên UI.
 - Evaluation result render đúng schema.
+- Chỉ submitted attempt xuất hiện trong Pending Reviews.
 
 ---
 
@@ -903,6 +926,8 @@ Frontend MVP:
 ✓ Practice Room
 ✓ multi-turn chat
 ✓ Session Result
+✓ Submit selected attempt
+✓ Manager Review
 ✓ citations
 ✓ deployed frontend
 ```
@@ -913,9 +938,9 @@ Frontend MVP:
 ### Mục tiêu: Product completion
 
 Hoàn thiện:
-- Manager Review.
+- Manager Review hardening.
 - History.
-- Progress Dashboard.
+- Basic recent-session summary; full Progress Dashboard remains P1.
 - Empty states.
 - Better errors.
 - Telemetry.
@@ -1040,6 +1065,9 @@ MVP pass khi salesperson có thể:
    - Closing / Next Step
 
 10. See evidence + improvement feedback
+
+11. Retry or submit the selected attempt
+12. Manager opens the submitted attempt, approves/edits it, and saves the official result
 ```
 
 MVP không bắt buộc:
@@ -1060,7 +1088,7 @@ Trước khi đưa sales tester:
 ✓ Copilot grounded + citation
 ✓ policy/version handling
 ✓ Role-play multi-turn stable
-✓ adaptive customer behavior
+✓ fixed-difficulty, scenario-consistent customer behavior
 ✓ session persistence
 ✓ evaluation + evidence
 ✓ Manager HITL
@@ -1133,7 +1161,7 @@ Feature Freeze
 MVP Deployed
         ↓
 01–02 Oct
-HITL + Evaluation + Hardening + Polish
+Evaluation + Hardening + History + Polish
         ↓
 03 Oct
 Sales Tester Release
@@ -1157,7 +1185,7 @@ Ví dụ:
 ```text
 Duy
 DONE: Multi-turn RoleplayGraph v1
-TODAY: Adaptive objection logic
+TODAY: Semantic disclosure + objection transition logic
 BLOCKED: waiting knowledge tool interface
 NEED FROM: Chương - search_policy() contract
 ```

@@ -2,6 +2,7 @@
 
 from enum import StrEnum
 from typing import Any, Literal
+from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
@@ -24,6 +25,7 @@ class TerminationStatus(StrEnum):
     MAX_TURNS = "max_turns"
 
 class RoleplayMessage(BaseModel):
+    message_id: str = Field(default_factory=lambda: str(uuid4()))
     role: Literal["customer", "advisor"]
     content: str = Field(min_length=1)
 
@@ -31,6 +33,8 @@ class RoleplayState(BaseModel):
     session_id: str
     scenario_id: str
     difficulty: str
+    sales_channel: str | None = None
+    training_objective: str | None = None
     persona: dict[str, Any] = Field(default_factory=dict)
     conversation_stage: ConversationStage = ConversationStage.OPENING
     turn_count: int = Field(default=0, ge=0)
@@ -57,6 +61,8 @@ class RoleplayState(BaseModel):
             session_id=session_id,
             scenario_id=scenario.scenario_id,
             difficulty=scenario.difficulty,
+            sales_channel=scenario.sales_channel,
+            training_objective=scenario.training_objective,
             persona=scenario.persona,
             visible_context=scenario.visible_context,
             hidden_facts=scenario.hidden_facts,
@@ -87,6 +93,9 @@ class RoleplayState(BaseModel):
         return {
             "session_id": self.session_id,
             "scenario_id": self.scenario_id,
+            "difficulty": self.difficulty,
+            "sales_channel": self.sales_channel,
+            "training_objective": self.training_objective,
             "conversation_stage": self.conversation_stage.value,
             "turn_count": self.turn_count,
             "visible_context": self.visible_context,
