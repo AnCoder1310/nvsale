@@ -127,7 +127,8 @@ hẹn xác minh có thể là hành vi đúng khi evidence chưa đủ.
 | 5 | Chính xác, đầy đủ trong phạm vi câu hỏi, giải thích eligibility/trade-off minh bạch và xử lý tốt trường hợp nguồn thiếu hoặc xung đột. |
 
 Rubric không hard-code giá, ưu đãi, bảo hành, lãi suất hoặc mốc dung lượng pin.
-Những fact thay đổi theo thời gian phải đến từ evidence snapshot của phiên.
+Những fact thay đổi theo thời gian phải đến từ tài liệu được phê duyệt; factual
+finding phải lưu source ID và version đã dùng để kiểm tra claim.
 
 ### 3.5. Closing / Next Step
 

@@ -172,7 +172,6 @@ Scenario format hỗ trợ:
 - sales_channel
 - training_objective
 - scenario_version
-- evidence_snapshot_id
 - expected_discovery
 - success_conditions
 - termination_conditions
