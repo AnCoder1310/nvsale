@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,16 +20,49 @@ class Settings(BaseSettings):
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     cors_origins: str = "http://localhost:3000"
 
-    # LLM
-    openai_api_key: str = ""
+    # LLM Providers
+    llm_provider: Literal["openai", "openrouter", "gemini", "grok", "deepseek"] = "openai"
+    openai_api_key: str = Field(
+        default="",
+        validation_alias=AliasChoices("openai_api_key", "OPENAI_API_KEY"),
+    )
+    openrouter_api_key: str = Field(
+        default="",
+        validation_alias=AliasChoices(
+            "openrouter_api_key",
+            "OPENROUTER_API_KEY",
+            "open_router_api_key",
+            "OPEN_ROUTER_API_KEY",
+            "open_router_api",
+            "OPEN_ROUTER_API",
+        ),
+    )
+    gemini_api_key: str = Field(
+        default="",
+        validation_alias=AliasChoices("gemini_api_key", "GEMINI_API_KEY", "google_api_key", "GOOGLE_API_KEY"),
+    )
+    grok_api_key: str = Field(
+        default="",
+        validation_alias=AliasChoices("grok_api_key", "GROK_API_KEY", "xai_api_key", "XAI_API_KEY"),
+    )
+    deepseek_api_key: str = Field(
+        default="",
+        validation_alias=AliasChoices("deepseek_api_key", "DEEPSEEK_API_KEY"),
+    )
+
+    # Model Configuration
     model_name: str = "gpt-4o-mini"
-    llm_temperature: float = Field(default=0.7, ge=0.0, le=2.0)
+    embedding_model_name: str = "text-embedding-3-small"
+    llm_temperature: float = Field(default=0.2, ge=0.0, le=2.0)
 
     # Database
     database_url: str = "sqlite:///./data/app.db"
 
     # Vector Store
+    vector_store_type: Literal["chroma", "memory"] = "chroma"
     chroma_persist_dir: str = "./data/chroma"
+    chroma_collection_name: str = "vinfast_knowledge"
+    similarity_top_k: int = 4
 
 
 @lru_cache
