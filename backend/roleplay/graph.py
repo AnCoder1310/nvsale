@@ -7,10 +7,12 @@ from typing import TypedDict
 from langgraph.graph import END, StateGraph
 from pydantic import ValidationError
 
+from backend.knowledge.metadata import SessionEvaluationResult
+
 from .contracts import CheckpointContract, ScenarioContract
 from .customer_agent import CustomerAgent
 from .scenario_loader import ScenarioNotFoundError, ScenarioRepository
-from .state import RoleplayState, TerminationStatus
+from .state import ConversationStage, EvaluationStatus, RoleplayState, TerminationStatus
 from .state_reducer import apply_turn_analysis
 from .turn_analyzer import TurnAnalysis, TurnAnalyzer
 
@@ -164,6 +166,8 @@ class RoleplayGraph:
         if checkpoint_data is None:
             raise RoleplaySessionNotFoundError(f"unknown session_id: {session_id}")
         state = self._validate_checkpoint(checkpoint_data, session_id)
+        if state.termination_status is not TerminationStatus.ACTIVE:
+            raise RoleplaySessionConflictError("cannot continue a finished practice session")
         try:
             scenario = self._repository.get(state.scenario_id)
         except ScenarioNotFoundError as exc:
@@ -182,6 +186,46 @@ class RoleplayGraph:
         if not isinstance(updated, RoleplayState):
             raise RoleplayGraphError("turn graph returned invalid role-play state")
         return updated.advisor_visible_context()
+
+    async def get_session_state(self, session_id: str) -> RoleplayState:
+        checkpoint_data = await self._checkpoint.load(session_id)
+        if checkpoint_data is None:
+            raise RoleplaySessionNotFoundError(f"unknown session_id: {session_id}")
+        return self._validate_checkpoint(checkpoint_data, session_id)
+
+    async def finish_session(self, session_id: str) -> RoleplayState:
+        state = await self.get_session_state(session_id)
+        if state.termination_status is TerminationStatus.ACTIVE:
+            state.termination_status = TerminationStatus.ADVISOR_ENDED
+            state.termination_reason = "Advisor ended the practice session."
+            state.conversation_stage = ConversationStage.FINISHED
+        if state.evaluation_status is EvaluationStatus.NOT_STARTED:
+            state.evaluation_status = EvaluationStatus.PENDING
+            await _save_state(self._checkpoint, state)
+        return state
+
+    async def save_evaluation_result(
+        self, session_id: str, result: SessionEvaluationResult
+    ) -> RoleplayState:
+        state = await self.get_session_state(session_id)
+        if state.termination_status is TerminationStatus.ACTIVE:
+            raise RoleplaySessionConflictError("cannot evaluate an active practice session")
+        if result.session_id != session_id or result.scenario_id != state.scenario_id:
+            raise RoleplaySessionConflictError("evaluation does not match practice session")
+        if state.evaluation_result is not None:
+            if state.evaluation_result != result:
+                raise RoleplaySessionConflictError("practice session already has an evaluation")
+            return state
+        state.evaluation_result = result
+        state.evaluation_status = EvaluationStatus.COMPLETE
+        await _save_state(self._checkpoint, state)
+        return state
+
+    async def mark_evaluation_failed(self, session_id: str) -> None:
+        state = await self.get_session_state(session_id)
+        if state.evaluation_result is None and state.termination_status is not TerminationStatus.ACTIVE:
+            state.evaluation_status = EvaluationStatus.FAILED
+            await _save_state(self._checkpoint, state)
 
     @staticmethod
     def _validate_checkpoint(data: dict, session_id: str) -> RoleplayState:

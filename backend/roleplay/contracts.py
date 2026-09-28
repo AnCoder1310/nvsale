@@ -1,8 +1,13 @@
 """Shared product contracts for role-play, knowledge, and evaluation work."""
 
-from typing import Any, Literal, Protocol
+from typing import TYPE_CHECKING, Any, Literal, Protocol
 
 from pydantic import BaseModel, Field, model_validator
+
+from backend.knowledge.metadata import SessionEvaluationResult
+
+if TYPE_CHECKING:
+    from .state import RoleplayState
 
 RUBRIC_CRITERIA = ("need_discovery", "product_knowledge", "objection_handling", "policy_accuracy", "closing_next_step")
 RUBRIC_SCORE_MIN = 1
@@ -131,3 +136,13 @@ class RoleplayGraphContract(Protocol):
     async def start(self, session_id: str, scenario_id: str) -> dict[str, Any]: ...
 
     async def continue_session(self, session_id: str, advisor_message: str) -> dict[str, Any]: ...
+
+    async def get_session_state(self, session_id: str) -> "RoleplayState": ...
+
+    async def finish_session(self, session_id: str) -> "RoleplayState": ...
+
+    async def save_evaluation_result(
+        self, session_id: str, result: SessionEvaluationResult
+    ) -> "RoleplayState": ...
+
+    async def mark_evaluation_failed(self, session_id: str) -> None: ...

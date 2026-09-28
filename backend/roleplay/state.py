@@ -6,6 +6,8 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
+from backend.knowledge.metadata import SessionEvaluationResult
+
 from .contracts import ScenarioContract
 
 
@@ -24,6 +26,13 @@ class TerminationStatus(StrEnum):
     ADVISOR_ENDED = "advisor_ended"
     DROPPED_OUT = "dropped_out"
     MAX_TURNS = "max_turns"
+
+
+class EvaluationStatus(StrEnum):
+    NOT_STARTED = "not_started"
+    PENDING = "pending"
+    FAILED = "failed"
+    COMPLETE = "complete"
 
 
 class RoleplayMessage(BaseModel):
@@ -55,6 +64,8 @@ class RoleplayState(BaseModel):
     current_topic: str | None = None
     termination_status: TerminationStatus = TerminationStatus.ACTIVE
     termination_reason: str | None = None
+    evaluation_status: EvaluationStatus = EvaluationStatus.NOT_STARTED
+    evaluation_result: SessionEvaluationResult | None = None
     messages: list[RoleplayMessage] = Field(default_factory=list)
 
     @classmethod
