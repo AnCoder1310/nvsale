@@ -7,6 +7,8 @@ from backend.knowledge.metadata import (
     CriterionEvaluation,
     CriterionStatus,
     CriterionType,
+    FactualClaimStatus,
+    FactualFinding,
     SessionEvaluationResult,
     TranscriptEvidence,
 )
@@ -233,4 +235,40 @@ def test_session_result_rejects_llm_supplied_inconsistent_aggregate():
                 _not_observed(CriterionType.POLICY_ACCURACY),
                 _not_observed(CriterionType.CLOSING_NEXT_STEP),
             ],
+        )
+
+
+def test_factual_finding_derives_source_ids_from_auditable_references():
+    finding = FactualFinding(
+        claim="Chính sách A đang áp dụng.",
+        message_id="advisor-1",
+        status=FactualClaimStatus.SUPPORTED,
+        source_references=[
+            {
+                "source_id": "policy-a",
+                "version": "2026.1",
+                "quote": "Chính sách A đang áp dụng",
+            }
+        ],
+        reason="Approved evidence supports the claim.",
+    )
+
+    assert finding.source_ids == ["policy-a"]
+
+
+def test_factual_finding_rejects_mismatched_source_ids_and_references():
+    with pytest.raises(ValueError, match="must match source_references"):
+        FactualFinding(
+            claim="Chính sách A đang áp dụng.",
+            message_id="advisor-1",
+            status=FactualClaimStatus.SUPPORTED,
+            source_ids=["different-source"],
+            source_references=[
+                {
+                    "source_id": "policy-a",
+                    "version": "2026.1",
+                    "quote": "Chính sách A đang áp dụng",
+                }
+            ],
+            reason="Approved evidence supports the claim.",
         )
