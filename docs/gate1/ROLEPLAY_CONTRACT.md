@@ -14,8 +14,11 @@ and hidden facts, objections, discoveries, termination state, and message histor
 Objections and termination conditions are nested typed contracts. All scenario
 objections start as unresolved. They are not active until D2 checks `trigger_stage`.
 D2 loads a scenario, creates state, persists every turn, and checkpoints it. On
-termination it persists the final turn, freezes the transcript, then starts the
-recoverable evaluation job. A provider/evaluator failure must not lose the session.
+termination it persists the final turn and freezes the transcript. `POST
+/practice/{session_id}/finish` then evaluates the saved attempt. The checkpoint
+records `pending`, `failed`, or `complete`; a failed evaluation can be retried
+through Finish without losing the transcript. `GET /practice/{session_id}/result`
+returns the status and, when complete, the provisional AI result.
 
 Difficulty is selected before the session and remains fixed for that attempt.
 Adaptive difficulty inside an attempt is out of MVP scope; later attempts may use a
@@ -60,7 +63,9 @@ active, completed, advisor-ended, dropped-out, or max-turns.
 ## Integration boundary
 
 `RoleplayGraphContract.start(session_id, scenario_id)` and
-`continue_session(session_id, advisor_message)` are the stable D2 graph boundary.
+`continue_session(session_id, advisor_message)` are the D2 turn boundary. The
+graph also exposes finish, state load, and result save operations through the same
+checkpoint contract.
 The session lifecycle additionally needs idempotent finish and selected-attempt submit
 operations at the service/API layer. Finishing creates a provisional AI result; it
 does not automatically enter Manager review. Only an advisor-submitted attempt enters
@@ -72,3 +77,8 @@ public scenario/session DTOs only. Evaluation uses the shared five criteria and 
 scale from `backend/knowledge/metadata.py`, supports `ASSESSED`, `NOT_OBSERVED`, and
 `INSUFFICIENT_EVIDENCE`, and requires verified transcript evidence for every assessed
 score.
+
+The practice service requires an evaluator and a knowledge-evidence provider. The
+shared runtime must supply those dependencies plus durable checkpoint storage before
+mounting these routes in the deployed app. Session ownership checks must be applied
+at the HTTP boundary before exposing transcripts or training results to users.
