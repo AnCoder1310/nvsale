@@ -68,6 +68,11 @@ class StubPracticeService:
             raise self.finish_error
         return PracticeResultView(session_id=session_id, evaluation_status="failed")
 
+    async def get_session(self, session_id):
+        if session_id == "missing":
+            raise RoleplaySessionNotFoundError("internal detail")
+        return session_view(session_id)
+
 
 @pytest.fixture
 def service():
@@ -185,3 +190,20 @@ async def test_finish_provider_failure_is_retryable_without_internal_detail(clie
     assert response.status_code == 503
     assert "retried" in response.json()["detail"]
     assert "secret provider response" not in response.text
+
+
+@pytest.mark.asyncio
+async def test_get_session_returns_only_advisor_safe_context(client):
+    response = await client.get("/api/v1/practice/session-1")
+
+    assert response.status_code == 200
+    assert response.json()["session_id"] == "session-1"
+    assert "hidden_facts" not in response.json()
+    assert "evaluation_result" not in response.json()
+
+
+@pytest.mark.asyncio
+async def test_get_missing_session_returns_404(client):
+    response = await client.get("/api/v1/practice/missing")
+
+    assert response.status_code == 404

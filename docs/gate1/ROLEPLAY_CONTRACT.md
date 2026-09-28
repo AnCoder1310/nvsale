@@ -19,6 +19,8 @@ termination it persists the final turn and freezes the transcript. `POST
 records `pending`, `failed`, or `complete`; a failed evaluation can be retried
 through Finish without losing the transcript. `GET /practice/{session_id}/result`
 returns the status and, when complete, the provisional AI result.
+`GET /practice/{session_id}` returns only `advisor_visible_context()` so the
+Practice Room can recover the saved transcript after a reply fails.
 
 Difficulty is selected before the session and remains fixed for that attempt.
 Adaptive difficulty inside an attempt is out of MVP scope; later attempts may use a

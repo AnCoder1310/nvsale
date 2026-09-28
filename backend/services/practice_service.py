@@ -121,6 +121,10 @@ class PracticeService:
         state = await self._graph.get_session_state(session_id)
         return self._result_view(state)
 
+    async def get_session(self, session_id: str) -> PracticeSessionView:
+        state = await self._graph.get_session_state(session_id)
+        return PracticeSessionView.model_validate(state.advisor_visible_context())
+
     def _lock_for(self, session_id: str) -> asyncio.Lock:
         return self._session_locks.setdefault(session_id, asyncio.Lock())
 

@@ -134,4 +134,16 @@ def create_practice_router(service: PracticeService) -> APIRouter:
                 detail="Practice session was not found.",
             ) from exc
 
+    @router.get("/{session_id}", response_model=PracticeSessionView)
+    async def get_session(
+        session_id: Annotated[str, Path(min_length=1, max_length=120)],
+    ) -> PracticeSessionView:
+        try:
+            return await service.get_session(session_id)
+        except RoleplaySessionNotFoundError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Practice session was not found.",
+            ) from exc
+
     return router
