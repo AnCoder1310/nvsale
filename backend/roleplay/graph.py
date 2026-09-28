@@ -29,6 +29,18 @@ class RoleplayGraphError(ValueError):
     """Raised when a session cannot safely enter the role-play graph."""
 
 
+class RoleplayScenarioNotFoundError(RoleplayGraphError):
+    """Raised when a requested or restored scenario is unavailable."""
+
+
+class RoleplaySessionNotFoundError(RoleplayGraphError):
+    """Raised when a session checkpoint does not exist."""
+
+
+class RoleplaySessionConflictError(RoleplayGraphError):
+    """Raised when a session identifier is reused incompatibly."""
+
+
 def build_roleplay_turn_graph(
     analyzer: TurnAnalyzer,
     customer_agent: CustomerAgent,
@@ -123,13 +135,13 @@ class RoleplayGraph:
         try:
             scenario = self._repository.get(scenario_id)
         except ScenarioNotFoundError as exc:
-            raise RoleplayGraphError(str(exc)) from exc
+            raise RoleplayScenarioNotFoundError(str(exc)) from exc
 
         existing = await self._checkpoint.load(session_id)
         if existing is not None:
             state = self._validate_checkpoint(existing, session_id)
             if state.scenario_id != scenario_id:
-                raise RoleplayGraphError("session_id already belongs to a different scenario")
+                raise RoleplaySessionConflictError("session_id already belongs to a different scenario")
             return state.advisor_visible_context()
 
         state = RoleplayState.from_scenario(session_id, scenario)
@@ -150,12 +162,14 @@ class RoleplayGraph:
     ) -> dict:
         checkpoint_data = await self._checkpoint.load(session_id)
         if checkpoint_data is None:
-            raise RoleplayGraphError(f"unknown session_id: {session_id}")
+            raise RoleplaySessionNotFoundError(f"unknown session_id: {session_id}")
         state = self._validate_checkpoint(checkpoint_data, session_id)
         try:
             scenario = self._repository.get(state.scenario_id)
         except ScenarioNotFoundError as exc:
-            raise RoleplayGraphError(f"session references an unavailable scenario: {state.scenario_id}") from exc
+            raise RoleplayScenarioNotFoundError(
+                f"session references an unavailable scenario: {state.scenario_id}"
+            ) from exc
 
         result = await self._turn_graph.ainvoke(
             {

@@ -7,7 +7,13 @@ from .contracts import (
     ScenarioContract,
 )
 from .customer_agent import CustomerAgent, CustomerResponseError
-from .graph import RoleplayGraph, RoleplayGraphError
+from .graph import (
+    RoleplayGraph,
+    RoleplayGraphError,
+    RoleplayScenarioNotFoundError,
+    RoleplaySessionConflictError,
+    RoleplaySessionNotFoundError,
+)
 from .scenario_loader import ScenarioRepository, ScenarioSummary
 from .state import ConversationStage, RoleplayState, TerminationStatus
 from .state_reducer import apply_turn_analysis
@@ -21,6 +27,9 @@ __all__ = [
     "CustomerResponseError",
     "RoleplayGraph",
     "RoleplayGraphError",
+    "RoleplayScenarioNotFoundError",
+    "RoleplaySessionConflictError",
+    "RoleplaySessionNotFoundError",
     "RoleplayGraphContract",
     "RoleplayState",
     "ScenarioContract",

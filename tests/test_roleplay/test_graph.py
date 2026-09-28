@@ -5,7 +5,11 @@ from pathlib import Path
 import pytest
 
 from backend.roleplay.customer_agent import CustomerAgent, CustomerResponseError
-from backend.roleplay.graph import RoleplayGraph, RoleplayGraphError
+from backend.roleplay.graph import (
+    RoleplayGraph,
+    RoleplaySessionConflictError,
+    RoleplaySessionNotFoundError,
+)
 from backend.roleplay.scenario_loader import ScenarioRepository
 from backend.roleplay.state import RoleplayState, TerminationStatus
 from backend.roleplay.turn_analyzer import TurnAnalyzer
@@ -177,7 +181,7 @@ async def test_customer_provider_failure_does_not_lose_advisor_turn():
 async def test_unknown_session_has_a_domain_specific_error():
     graph, _, _, _ = build_graph([], [])
 
-    with pytest.raises(RoleplayGraphError, match="unknown session_id"):
+    with pytest.raises(RoleplaySessionNotFoundError, match="unknown session_id"):
         await graph.continue_session("missing", "Xin chào")
 
 
@@ -189,5 +193,5 @@ async def test_session_id_cannot_be_reused_for_another_scenario():
     )
     await graph.start("session-1", "SCENARIO_01_VF5_TAXI")
 
-    with pytest.raises(RoleplayGraphError, match="different scenario"):
+    with pytest.raises(RoleplaySessionConflictError, match="different scenario"):
         await graph.start("session-1", "SCENARIO_02_VF7_VS_CX5")
