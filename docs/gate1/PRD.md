@@ -247,7 +247,6 @@ opening_statement
 difficulty
 reveal_rules
 assessment_dimensions
-evidence_snapshot
 scenario_version
 ```
 

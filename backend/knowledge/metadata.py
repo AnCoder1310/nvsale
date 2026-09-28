@@ -179,13 +179,31 @@ class CriterionEvaluation(BaseModel):
         return self
 
 
+class KnowledgeEvidenceReference(BaseModel):
+    source_id: str = Field(..., min_length=1)
+    version: str = Field(..., min_length=1)
+    quote: str = Field(..., min_length=1)
+
+
 class FactualFinding(BaseModel):
     claim: str = Field(..., min_length=1)
     message_id: str = Field(..., min_length=1)
     status: FactualClaimStatus
     source_ids: list[str] = Field(default_factory=list)
+    source_references: list[KnowledgeEvidenceReference] = Field(default_factory=list)
     severity: str = Field(default="info", pattern="^(info|warning|critical)$")
     reason: str = Field(..., min_length=1)
+
+    @model_validator(mode="after")
+    def validate_source_references(self) -> "FactualFinding":
+        reference_ids = [reference.source_id for reference in self.source_references]
+        if len(reference_ids) != len(set(reference_ids)):
+            raise ValueError("factual source references must be unique")
+        if self.source_ids and reference_ids and set(self.source_ids) != set(reference_ids):
+            raise ValueError("source_ids must match source_references")
+        if reference_ids and not self.source_ids:
+            self.source_ids = reference_ids
+        return self
 
 
 class RecommendedNextPractice(BaseModel):

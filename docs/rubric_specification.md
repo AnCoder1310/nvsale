@@ -127,7 +127,8 @@ hẹn xác minh có thể là hành vi đúng khi evidence chưa đủ.
 | 5 | Chính xác, đầy đủ trong phạm vi câu hỏi, giải thích eligibility/trade-off minh bạch và xử lý tốt trường hợp nguồn thiếu hoặc xung đột. |
 
 Rubric không hard-code giá, ưu đãi, bảo hành, lãi suất hoặc mốc dung lượng pin.
-Những fact thay đổi theo thời gian phải đến từ evidence snapshot của phiên.
+Những fact thay đổi theo thời gian phải đến từ tài liệu được phê duyệt; factual
+finding phải lưu source ID và version đã dùng để kiểm tra claim.
 
 ### 3.5. Closing / Next Step
 
@@ -153,6 +154,10 @@ Factual claim được đánh giá tách khỏi sales behavior:
 Mỗi finding lưu claim text, transcript turn ID, source/version/span khi có và mức
 độ nghiêm trọng. `UNVERIFIABLE` không tự động có nghĩa advisor sai; tuy nhiên một
 lời cam kết chắc chắn không có căn cứ có thể ảnh hưởng Policy Accuracy.
+
+Runtime lưu evidence có nguồn trong `source_references`, mỗi phần tử gồm
+`source_id`, `version` và exact `quote` từ tài liệu được duyệt. `source_ids` được
+giữ làm trường tương thích/tìm kiếm nhanh nhưng phải khớp các reference này.
 
 Critical factual finding luôn hiển thị riêng, không bị che bởi overall score.
 
