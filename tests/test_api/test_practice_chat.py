@@ -10,7 +10,11 @@ from backend.roleplay.graph import (
     RoleplaySessionNotFoundError,
 )
 from backend.roleplay.scenario_loader import ScenarioRepository
-from backend.services.practice_service import PracticeSessionView
+from backend.services.practice_service import (
+    PracticeEvaluationUnavailableError,
+    PracticeResultView,
+    PracticeSessionView,
+)
 
 
 def session_view(session_id="session-1"):
@@ -33,8 +37,10 @@ class StubPracticeService:
         self.scenarios = ScenarioRepository().list_public()
         self.start_error = None
         self.message_error = None
+        self.finish_error = None
         self.start_calls = []
         self.message_calls = []
+        self.finish_calls = []
 
     def list_scenarios(self):
         return self.scenarios
@@ -50,6 +56,17 @@ class StubPracticeService:
         if self.message_error:
             raise self.message_error
         return session_view(session_id)
+
+    async def finish_session(self, session_id):
+        self.finish_calls.append(session_id)
+        if self.finish_error:
+            raise self.finish_error
+        return PracticeResultView(session_id=session_id, evaluation_status="pending")
+
+    async def get_result(self, session_id):
+        if self.finish_error:
+            raise self.finish_error
+        return PracticeResultView(session_id=session_id, evaluation_status="failed")
 
 
 @pytest.fixture
@@ -141,3 +158,30 @@ async def test_invalid_ai_output_returns_retryable_502_without_internal_detail(
     assert response.status_code == 502
     assert "saved" in response.json()["detail"]
     assert "secret detail" not in response.text
+
+
+@pytest.mark.asyncio
+async def test_finish_and_result_expose_evaluation_status(client, service):
+    finish = await client.post("/api/v1/practice/session-1/finish")
+    result = await client.get("/api/v1/practice/session-1/result")
+
+    assert finish.status_code == 200
+    assert finish.json() == {
+        "session_id": "session-1",
+        "evaluation_status": "pending",
+        "result": None,
+    }
+    assert result.status_code == 200
+    assert result.json()["evaluation_status"] == "failed"
+    assert service.finish_calls == ["session-1"]
+
+
+@pytest.mark.asyncio
+async def test_finish_provider_failure_is_retryable_without_internal_detail(client, service):
+    service.finish_error = PracticeEvaluationUnavailableError("secret provider response")
+
+    response = await client.post("/api/v1/practice/session-1/finish")
+
+    assert response.status_code == 503
+    assert "retried" in response.json()["detail"]
+    assert "secret provider response" not in response.text

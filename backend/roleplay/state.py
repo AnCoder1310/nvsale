@@ -4,7 +4,7 @@ from enum import StrEnum
 from typing import Any, Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from backend.knowledge.metadata import SessionEvaluationResult
 
@@ -67,6 +67,19 @@ class RoleplayState(BaseModel):
     evaluation_status: EvaluationStatus = EvaluationStatus.NOT_STARTED
     evaluation_result: SessionEvaluationResult | None = None
     messages: list[RoleplayMessage] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_evaluation_lifecycle(self) -> "RoleplayState":
+        if (self.evaluation_status is EvaluationStatus.COMPLETE) != (self.evaluation_result is not None):
+            raise ValueError("complete evaluation status and saved result must occur together")
+        if self.evaluation_result is not None and (
+            self.evaluation_result.session_id != self.session_id
+            or self.evaluation_result.scenario_id != self.scenario_id
+        ):
+            raise ValueError("saved evaluation does not match practice session")
+        if self.termination_status is TerminationStatus.ACTIVE and self.evaluation_status is not EvaluationStatus.NOT_STARTED:
+            raise ValueError("active practice session cannot have an evaluation status")
+        return self
 
     @classmethod
     def from_scenario(cls, session_id: str, scenario: ScenarioContract) -> "RoleplayState":

@@ -14,7 +14,12 @@ from backend.roleplay.graph import (
 from backend.roleplay.scenario_loader import ScenarioSummary
 from backend.roleplay.state_reducer import StateTransitionError
 from backend.roleplay.turn_analyzer import TurnAnalysisError
-from backend.services.practice_service import PracticeService, PracticeSessionView
+from backend.services.practice_service import (
+    PracticeEvaluationUnavailableError,
+    PracticeResultView,
+    PracticeService,
+    PracticeSessionView,
+)
 
 
 class CreatePracticeSessionRequest(BaseModel):
@@ -93,6 +98,40 @@ def create_practice_router(service: PracticeService) -> APIRouter:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail=("The AI response could not be completed. The advisor turn was saved and can be retried."),
+            ) from exc
+
+    @router.post("/{session_id}/finish", response_model=PracticeResultView)
+    async def finish_session(
+        session_id: Annotated[str, Path(min_length=1, max_length=120)],
+    ) -> PracticeResultView:
+        try:
+            return await service.finish_session(session_id)
+        except RoleplaySessionNotFoundError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Practice session was not found.",
+            ) from exc
+        except RoleplaySessionConflictError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Practice session cannot be finished in its current state.",
+            ) from exc
+        except PracticeEvaluationUnavailableError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Evaluation is temporarily unavailable. The saved attempt can be retried.",
+            ) from exc
+
+    @router.get("/{session_id}/result", response_model=PracticeResultView)
+    async def get_result(
+        session_id: Annotated[str, Path(min_length=1, max_length=120)],
+    ) -> PracticeResultView:
+        try:
+            return await service.get_result(session_id)
+        except RoleplaySessionNotFoundError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Practice session was not found.",
             ) from exc
 
     return router

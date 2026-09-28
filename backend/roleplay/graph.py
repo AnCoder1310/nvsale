@@ -199,7 +199,7 @@ class RoleplayGraph:
             state.termination_status = TerminationStatus.ADVISOR_ENDED
             state.termination_reason = "Advisor ended the practice session."
             state.conversation_stage = ConversationStage.FINISHED
-        if state.evaluation_status is EvaluationStatus.NOT_STARTED:
+        if state.evaluation_status in {EvaluationStatus.NOT_STARTED, EvaluationStatus.FAILED}:
             state.evaluation_status = EvaluationStatus.PENDING
             await _save_state(self._checkpoint, state)
         return state
