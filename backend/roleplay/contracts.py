@@ -1,4 +1,4 @@
-"""Frozen Gate 1 contracts shared by role-play, knowledge, and evaluation work."""
+"""Shared product contracts for role-play, knowledge, and evaluation work."""
 
 from typing import Any, Literal, Protocol
 
@@ -23,8 +23,13 @@ CUSTOMER_BEHAVIOR_RULES = (
 
 class DisclosureRule(BaseModel):
     fact_key: str
-    trigger_intent: str
-    trigger_keywords: list[str] = Field(min_length=1)
+    trigger_intent: str = Field(
+        ..., description="Semantic advisor intent that permits this disclosure"
+    )
+    trigger_keywords: list[str] = Field(
+        default_factory=list,
+        description="Positive examples/test hints; never an exact-phrase requirement",
+    )
     revealed_statement: str
 
 
@@ -45,6 +50,10 @@ class ScenarioContract(BaseModel):
     title: str
     difficulty: str
     target_skills: list[str]
+    sales_channel: str | None = None
+    training_objective: str | None = None
+    scenario_version: str = "1.0"
+    evidence_snapshot_id: str | None = None
     persona: dict[str, Any]
     visible_context: str
     hidden_facts: dict[str, str]
