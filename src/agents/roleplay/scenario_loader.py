@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 from .contracts import EvaluationCriterion, ScenarioContract
 
-DEFAULT_SCENARIO_PATH = Path(__file__).resolve().parents[2] / "data" / "scenarios" / "scenarios.json"
+DEFAULT_SCENARIO_PATH = Path(__file__).resolve().parents[3] / "data" / "scenarios" / "scenarios.json"
 
 
 class ScenarioDatasetError(ValueError):
