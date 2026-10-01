@@ -6,7 +6,7 @@ from typing import Any, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from backend.knowledge.metadata import (
+from src.models.evaluation import (
     CriterionEvaluation,
     CriterionStatus,
     FactualClaimStatus,

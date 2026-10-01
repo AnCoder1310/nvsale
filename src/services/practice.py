@@ -9,17 +9,17 @@ from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict
 
-from backend.knowledge.metadata import SessionEvaluationResult
-from backend.roleplay.contracts import RoleplayGraphContract, ScenarioContract
-from backend.roleplay.evaluator import KnowledgeEvidence, RoleplayEvaluator
-from backend.roleplay.scenario_loader import ScenarioRepository, ScenarioSummary
-from backend.roleplay.state import (
+from src.agents.roleplay.contracts import RoleplayGraphContract, ScenarioContract
+from src.agents.roleplay.evaluator import KnowledgeEvidence, RoleplayEvaluator
+from src.agents.roleplay.scenario_loader import ScenarioRepository, ScenarioSummary
+from src.agents.roleplay.state import (
     ConversationStage,
     EvaluationStatus,
     RoleplayMessage,
     RoleplayState,
     TerminationStatus,
 )
+from src.models.evaluation import SessionEvaluationResult
 
 
 class PracticeSessionView(BaseModel):

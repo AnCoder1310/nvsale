@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Literal, Protocol
 
 from pydantic import BaseModel, Field, model_validator
 
-from backend.knowledge.metadata import SessionEvaluationResult
+from src.models.evaluation import SessionEvaluationResult
 
 if TYPE_CHECKING:
     from .state import RoleplayState

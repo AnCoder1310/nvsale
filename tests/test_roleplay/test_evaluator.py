@@ -2,15 +2,15 @@ from pathlib import Path
 
 import pytest
 
-from backend.knowledge.metadata import CriterionType, ReviewStatus
-from backend.roleplay.evaluator import (
+from src.agents.roleplay.evaluator import (
     EvaluationError,
     KnowledgeEvidence,
     RoleplayEvaluator,
 )
-from backend.roleplay.prompts import EVALUATOR_PROMPT_VERSION, EVALUATOR_SYSTEM_PROMPT
-from backend.roleplay.scenario_loader import ScenarioRepository
-from backend.roleplay.state import RoleplayMessage, RoleplayState, TerminationStatus
+from src.agents.roleplay.prompts import EVALUATOR_PROMPT_VERSION, EVALUATOR_SYSTEM_PROMPT
+from src.agents.roleplay.scenario_loader import ScenarioRepository
+from src.agents.roleplay.state import RoleplayMessage, RoleplayState, TerminationStatus
+from src.models.evaluation import CriterionType, ReviewStatus
 
 SCENARIOS = Path("data/scenarios/scenarios.json")
 

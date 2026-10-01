@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from backend.roleplay.scenario_loader import (
+from src.agents.roleplay.scenario_loader import (
     ScenarioDatasetError,
     ScenarioNotFoundError,
     ScenarioRepository,

@@ -7,7 +7,7 @@ from typing import TypedDict
 from langgraph.graph import END, StateGraph
 from pydantic import ValidationError
 
-from backend.knowledge.metadata import SessionEvaluationResult
+from src.models.evaluation import SessionEvaluationResult
 
 from .contracts import CheckpointContract, ScenarioContract
 from .customer_agent import CustomerAgent

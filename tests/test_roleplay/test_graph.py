@@ -4,15 +4,15 @@ from pathlib import Path
 
 import pytest
 
-from backend.roleplay.customer_agent import CustomerAgent, CustomerResponseError
-from backend.roleplay.graph import (
+from src.agents.roleplay.customer_agent import CustomerAgent, CustomerResponseError
+from src.agents.roleplay.graph import (
     RoleplayGraph,
     RoleplaySessionConflictError,
     RoleplaySessionNotFoundError,
 )
-from backend.roleplay.scenario_loader import ScenarioRepository
-from backend.roleplay.state import EvaluationStatus, RoleplayState, TerminationStatus
-from backend.roleplay.turn_analyzer import TurnAnalyzer
+from src.agents.roleplay.scenario_loader import ScenarioRepository
+from src.agents.roleplay.state import EvaluationStatus, RoleplayState, TerminationStatus
+from src.agents.roleplay.turn_analyzer import TurnAnalyzer
 
 SCENARIOS = Path("data/scenarios/scenarios.json")
 

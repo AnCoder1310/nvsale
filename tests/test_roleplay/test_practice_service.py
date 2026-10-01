@@ -4,18 +4,18 @@ from pathlib import Path
 
 import pytest
 
-from backend.knowledge.metadata import (
+from src.agents.roleplay.customer_agent import CustomerAgent
+from src.agents.roleplay.graph import RoleplayGraph, RoleplaySessionConflictError
+from src.agents.roleplay.scenario_loader import ScenarioRepository
+from src.agents.roleplay.state import EvaluationStatus, RoleplayState, TerminationStatus
+from src.agents.roleplay.turn_analyzer import TurnAnalyzer
+from src.models.evaluation import (
     CriterionEvaluation,
     CriterionStatus,
     CriterionType,
     SessionEvaluationResult,
 )
-from backend.roleplay.customer_agent import CustomerAgent
-from backend.roleplay.graph import RoleplayGraph, RoleplaySessionConflictError
-from backend.roleplay.scenario_loader import ScenarioRepository
-from backend.roleplay.state import EvaluationStatus, RoleplayState, TerminationStatus
-from backend.roleplay.turn_analyzer import TurnAnalyzer
-from backend.services.practice_service import PracticeEvaluationUnavailableError, PracticeService
+from src.services.practice import PracticeEvaluationUnavailableError, PracticeService
 
 SCENARIOS = Path("data/scenarios/scenarios.json")
 

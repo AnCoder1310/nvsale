@@ -2,9 +2,9 @@ from pathlib import Path
 
 import pytest
 
-from backend.roleplay.scenario_loader import ScenarioRepository
-from backend.roleplay.state import RoleplayState
-from backend.roleplay.turn_analyzer import TurnAnalysisError, TurnAnalyzer
+from src.agents.roleplay.scenario_loader import ScenarioRepository
+from src.agents.roleplay.state import RoleplayState
+from src.agents.roleplay.turn_analyzer import TurnAnalysisError, TurnAnalyzer
 
 SCENARIOS = Path("data/scenarios/scenarios.json")
 

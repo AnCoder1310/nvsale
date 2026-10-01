@@ -5,16 +5,16 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Path, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from backend.roleplay.customer_agent import CustomerResponseError
-from backend.roleplay.graph import (
+from src.agents.roleplay.customer_agent import CustomerResponseError
+from src.agents.roleplay.graph import (
     RoleplayScenarioNotFoundError,
     RoleplaySessionConflictError,
     RoleplaySessionNotFoundError,
 )
-from backend.roleplay.scenario_loader import ScenarioSummary
-from backend.roleplay.state_reducer import StateTransitionError
-from backend.roleplay.turn_analyzer import TurnAnalysisError
-from backend.services.practice_service import (
+from src.agents.roleplay.scenario_loader import ScenarioSummary
+from src.agents.roleplay.state_reducer import StateTransitionError
+from src.agents.roleplay.turn_analyzer import TurnAnalysisError
+from src.services.practice import (
     PracticeEvaluationUnavailableError,
     PracticeResultView,
     PracticeService,

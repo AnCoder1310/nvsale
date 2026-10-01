@@ -2,10 +2,10 @@ from pathlib import Path
 
 import pytest
 
-from backend.roleplay.scenario_loader import ScenarioRepository
-from backend.roleplay.state import ConversationStage, RoleplayState, TerminationStatus
-from backend.roleplay.state_reducer import StateTransitionError, apply_turn_analysis
-from backend.roleplay.turn_analyzer import FactualClaim, TurnAnalysis
+from src.agents.roleplay.scenario_loader import ScenarioRepository
+from src.agents.roleplay.state import ConversationStage, RoleplayState, TerminationStatus
+from src.agents.roleplay.state_reducer import StateTransitionError, apply_turn_analysis
+from src.agents.roleplay.turn_analyzer import FactualClaim, TurnAnalysis
 
 SCENARIOS = Path("data/scenarios/scenarios.json")
 

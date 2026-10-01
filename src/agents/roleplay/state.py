@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field, model_validator
 
-from backend.knowledge.metadata import SessionEvaluationResult
+from src.models.evaluation import SessionEvaluationResult
 
 from .contracts import ScenarioContract
 

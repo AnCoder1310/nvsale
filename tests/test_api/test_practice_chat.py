@@ -3,14 +3,14 @@ import pytest
 import pytest_asyncio
 from fastapi import FastAPI
 
-from backend.api.practice_chat import create_practice_router
-from backend.roleplay.customer_agent import CustomerResponseError
-from backend.roleplay.graph import (
+from src.agents.roleplay.customer_agent import CustomerResponseError
+from src.agents.roleplay.graph import (
     RoleplayScenarioNotFoundError,
     RoleplaySessionNotFoundError,
 )
-from backend.roleplay.scenario_loader import ScenarioRepository
-from backend.services.practice_service import (
+from src.agents.roleplay.scenario_loader import ScenarioRepository
+from src.api.practice import create_practice_router
+from src.services.practice import (
     PracticeEvaluationUnavailableError,
     PracticeResultView,
     PracticeSessionView,
