@@ -11,6 +11,9 @@ contracts, consumers, tests, and UI semantics aligned.
 `RoleplayState` is initialized from `ScenarioContract` with a `session_id`. It keeps
 scenario identity, difficulty, persona, stages, turn count, trust/interest, visible
 and hidden facts, objections, discoveries, termination state, and message history.
+Validated advisor factual claims are retained with their originating message ID and
+category so Finish can retrieve evidence for the exact claim rather than the whole
+transcript.
 Objections and termination conditions are nested typed contracts. All scenario
 objections start as unresolved. They are not active until D2 checks `trigger_stage`.
 D2 loads a scenario, creates state, persists every turn, and checkpoints it. On
@@ -68,6 +71,10 @@ active, completed, advisor-ended, dropped-out, or max-turns.
 `continue_session(session_id, advisor_message)` are the D2 turn boundary. The
 graph also exposes finish, state load, and result save operations through the same
 checkpoint contract.
+The application composition uses `SQLCheckpointRepository`, selected through
+`DATABASE_URL`, so the same checkpoint contract works with local SQLite and hosted
+PostgreSQL. Role-play model calls use the shared provider factory through strict
+structured-output adapters; provider and malformed-output failures remain visible.
 The session lifecycle additionally needs idempotent finish and selected-attempt submit
 operations at the service/API layer. Finishing creates a provisional AI result; it
 does not automatically enter Manager review. Only an advisor-submitted attempt enters
@@ -81,6 +88,8 @@ scale from `src/models/evaluation.py`, supports `ASSESSED`, `NOT_OBSERVED`, and
 score.
 
 The practice service requires an evaluator and a knowledge-evidence provider. The
-shared runtime must supply those dependencies plus durable checkpoint storage before
-mounting these routes in the deployed app. Session ownership checks must be applied
-at the HTTP boundary before exposing transcripts or training results to users.
+mounted runtime supplies those dependencies and retrieves bounded evidence for each
+recorded factual claim through the shared knowledge service. Every recorded claim
+must receive exactly one factual verdict; missing verdicts invalidate the draft.
+Session ownership checks must still be supplied by the shared authentication boundary
+before exposing submit-review, transcript, or training-result operations to users.
