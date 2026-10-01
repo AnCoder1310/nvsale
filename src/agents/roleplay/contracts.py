@@ -33,6 +33,15 @@ EvaluationCriterion = Literal[
     "policy_accuracy",
     "closing_next_step",
 ]
+ClaimCategory = Literal[
+    "product",
+    "price",
+    "promotion",
+    "policy",
+    "warranty",
+    "battery_charging",
+    "other",
+]
 ObjectionStage = Literal[
     "opening",
     "discovery",

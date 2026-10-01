@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, model_validator
 
 from src.models.evaluation import SessionEvaluationResult
 
-from .contracts import ScenarioContract
+from .contracts import ClaimCategory, ScenarioContract
 
 
 class ConversationStage(StrEnum):
@@ -41,6 +41,14 @@ class RoleplayMessage(BaseModel):
     content: str = Field(min_length=1)
 
 
+class AdvisorFactualClaim(BaseModel):
+    """Exact advisor claim retained for grounded checks at session finish."""
+
+    message_id: str = Field(min_length=1)
+    text: str = Field(min_length=1)
+    category: ClaimCategory
+
+
 class RoleplayState(BaseModel):
     session_id: str
     scenario_id: str
@@ -67,6 +75,7 @@ class RoleplayState(BaseModel):
     evaluation_status: EvaluationStatus = EvaluationStatus.NOT_STARTED
     evaluation_result: SessionEvaluationResult | None = None
     messages: list[RoleplayMessage] = Field(default_factory=list)
+    factual_claims: list[AdvisorFactualClaim] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_evaluation_lifecycle(self) -> "RoleplayState":

@@ -2,22 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Protocol
+from typing import Any, Protocol
 
 from pydantic import BaseModel, Field, ValidationError
 
-from .contracts import ScenarioContract
+from .contracts import ClaimCategory, ScenarioContract
 from .state import RoleplayState
-
-ClaimCategory = Literal[
-    "product",
-    "price",
-    "promotion",
-    "policy",
-    "warranty",
-    "battery_charging",
-    "other",
-]
 
 
 class FactualClaim(BaseModel):
@@ -103,6 +93,9 @@ class TurnAnalyzer:
             for objection_id in _unique(analysis.resolved_objection_ids)
             if objection_id in resolvable_objections
         ]
+        factual_claims = [
+            claim for claim in analysis.factual_claims if claim.text.casefold() in advisor_message.casefold()
+        ]
 
         return analysis.model_copy(
             update={
@@ -110,5 +103,6 @@ class TurnAnalyzer:
                 "discovered_fact_ids": discovered_fact_ids,
                 "addressed_objection_ids": addressed_objection_ids,
                 "resolved_objection_ids": resolved_objection_ids,
+                "factual_claims": factual_claims,
             }
         )

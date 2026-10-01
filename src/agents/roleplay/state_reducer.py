@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from .contracts import ScenarioContract
-from .state import ConversationStage, RoleplayMessage, RoleplayState, TerminationStatus
+from .state import AdvisorFactualClaim, ConversationStage, RoleplayMessage, RoleplayState, TerminationStatus
 from .turn_analyzer import TurnAnalysis
 
 
@@ -38,7 +38,16 @@ def apply_turn_analysis(
         raise StateTransitionError("advisor_message must not be blank")
 
     updated = state.model_copy(deep=True)
-    updated.messages.append(RoleplayMessage(role="advisor", content=advisor_message.strip()))
+    advisor_turn = RoleplayMessage(role="advisor", content=advisor_message.strip())
+    updated.messages.append(advisor_turn)
+    updated.factual_claims.extend(
+        AdvisorFactualClaim(
+            message_id=advisor_turn.message_id,
+            text=claim.text,
+            category=claim.category,
+        )
+        for claim in analysis.factual_claims
+    )
     updated.turn_count += 1
 
     permitted_fact_ids = {
