@@ -1,9 +1,10 @@
 from datetime import date
-from enum import Enum
+from enum import StrEnum
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class DocumentType(str, Enum):
+class DocumentType(StrEnum):
     """5 loại tài liệu nghiệp vụ VinFast."""
     PRODUCT_SPECS = "product_specs"
     BATTLECARD = "battlecard"
@@ -12,7 +13,7 @@ class DocumentType(str, Enum):
     PROMOTION = "promotion"
 
 
-class DocumentStatus(str, Enum):
+class DocumentStatus(StrEnum):
     """Trạng thái hiệu lực của tài liệu."""
     ACTIVE = "active"
     EXPIRED = "expired"

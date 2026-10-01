@@ -1,4 +1,5 @@
 import logging
+
 from langchain_core.embeddings import Embeddings
 
 from src.knowledge.schemas import KnowledgeChunk
