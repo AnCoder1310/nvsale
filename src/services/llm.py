@@ -73,15 +73,16 @@ def get_llm(
         prov = "openrouter"
 
     if prov == "openrouter":
-        api_key = settings.openrouter_api_key or settings.openai_api_key or "sk-dummy"
-        model_name = model or (
-            f"openai/{settings.model_name}" if "/" not in settings.model_name else settings.model_name
-        )
+        api_key = settings.openrouter_api_key
+        if not api_key:
+            raise RuntimeError("OPENROUTER_API_KEY is required when LLM_PROVIDER=openrouter")
+        model_name = model or settings.openrouter_model_name
         return ChatOpenAI(
             model=model_name,
             api_key=api_key,
             base_url="https://openrouter.ai/api/v1",
             temperature=temp,
+            extra_body={"provider": {"require_parameters": True}},
         )
 
     if prov == "gemini":
