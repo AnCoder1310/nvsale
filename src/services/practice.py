@@ -51,9 +51,7 @@ class PracticeResultView(BaseModel):
 
 
 class KnowledgeEvidenceProvider(Protocol):
-    async def for_session(
-        self, scenario: ScenarioContract, state: RoleplayState
-    ) -> list[KnowledgeEvidence]: ...
+    async def for_session(self, scenario: ScenarioContract, state: RoleplayState) -> list[KnowledgeEvidence]: ...
 
 
 class PracticeEvaluationUnavailableError(RuntimeError):

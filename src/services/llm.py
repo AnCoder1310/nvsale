@@ -74,7 +74,9 @@ def get_llm(
 
     if prov == "openrouter":
         api_key = settings.openrouter_api_key or settings.openai_api_key or "sk-dummy"
-        model_name = model or (f"openai/{settings.model_name}" if "/" not in settings.model_name else settings.model_name)
+        model_name = model or (
+            f"openai/{settings.model_name}" if "/" not in settings.model_name else settings.model_name
+        )
         return ChatOpenAI(
             model=model_name,
             api_key=api_key,

@@ -131,11 +131,15 @@ async def generate_copilot_response(state: CopilotState) -> dict[str, Any]:
 
     try:
         llm = get_llm()
-        user_prompt = f"CÂU HỎI TƯ VẤN VIÊN: {query}\n\nCONTEXT:\n{context_str}\n\nHãy trả về JSON đúng định dạng yêu cầu:"
-        response = await llm.ainvoke([
-            SystemMessage(content=SYSTEM_PROMPT),
-            HumanMessage(content=user_prompt),
-        ])
+        user_prompt = (
+            f"CÂU HỎI TƯ VẤN VIÊN: {query}\n\nCONTEXT:\n{context_str}\n\nHãy trả về JSON đúng định dạng yêu cầu:"
+        )
+        response = await llm.ainvoke(
+            [
+                SystemMessage(content=SYSTEM_PROMPT),
+                HumanMessage(content=user_prompt),
+            ]
+        )
         content_text = response.content
         if isinstance(content_text, list):
             content_text = " ".join([str(x) for x in content_text])

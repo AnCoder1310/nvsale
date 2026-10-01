@@ -77,7 +77,10 @@ class RoleplayState(BaseModel):
             or self.evaluation_result.scenario_id != self.scenario_id
         ):
             raise ValueError("saved evaluation does not match practice session")
-        if self.termination_status is TerminationStatus.ACTIVE and self.evaluation_status is not EvaluationStatus.NOT_STARTED:
+        if (
+            self.termination_status is TerminationStatus.ACTIVE
+            and self.evaluation_status is not EvaluationStatus.NOT_STARTED
+        ):
             raise ValueError("active practice session cannot have an evaluation status")
         return self
 

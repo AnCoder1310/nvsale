@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class DocumentType(StrEnum):
     """5 loại tài liệu nghiệp vụ VinFast."""
+
     PRODUCT_SPECS = "product_specs"
     BATTLECARD = "battlecard"
     PRICE_LIST = "price_list"
@@ -15,12 +16,14 @@ class DocumentType(StrEnum):
 
 class DocumentStatus(StrEnum):
     """Trạng thái hiệu lực của tài liệu."""
+
     ACTIVE = "active"
     EXPIRED = "expired"
 
 
 class KnowledgeDocument(BaseModel):
     """Model validate dữ liệu nạp từ corpus.json (bỏ qua hoàn toàn sales_script)."""
+
     model_config = ConfigDict(extra="ignore")
 
     document_id: str = Field(..., description="Mã định danh duy nhất của tài liệu")
@@ -39,6 +42,7 @@ class KnowledgeDocument(BaseModel):
 
 class ChunkMetadata(BaseModel):
     """Metadata phẳng lưu trong Vector Database phục vụ lọc có điều kiện (where)."""
+
     chunk_id: str
     document_id: str
     title: str
@@ -56,6 +60,7 @@ class ChunkMetadata(BaseModel):
 
 class KnowledgeChunk(BaseModel):
     """Đơn vị chunk tri thức hoàn chỉnh."""
+
     chunk_id: str
     document_id: str
     content: str

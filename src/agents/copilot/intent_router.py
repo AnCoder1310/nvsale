@@ -76,8 +76,7 @@ def classify_intent(query: str) -> str:
 
     # Pricing & Promotion
     if any(
-        k in q
-        for k in ["giá", "lăn bánh", "khuyến mãi", "ưu đãi", "trả góp", "lãi suất", "trước bạ", "bao nhiêu tiền"]
+        k in q for k in ["giá", "lăn bánh", "khuyến mãi", "ưu đãi", "trả góp", "lãi suất", "trước bạ", "bao nhiêu tiền"]
     ):
         return "promotion"
 

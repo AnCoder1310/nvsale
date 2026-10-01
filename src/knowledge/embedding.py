@@ -23,6 +23,7 @@ class KnowledgeEmbeddingService:
             return f"OpenAI ({getattr(self.embeddings, 'model_name')})"
         if hasattr(self.embeddings, "dimension"):
             from src.config import get_settings
+
             target = get_settings().embedding_model_name
             return f"DeterministicHashEmbeddings (target: {target}, dim: {getattr(self.embeddings, 'dimension')})"
         return self.embeddings.__class__.__name__

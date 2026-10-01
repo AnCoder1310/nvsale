@@ -167,9 +167,7 @@ async def test_finish_persists_one_result_and_reuses_it_on_retry():
     service, checkpoint, evaluator = build_lifecycle_service()
     await service.start_session("SCENARIO_01_VF5_TAXI")
 
-    first, second = await asyncio.gather(
-        service.finish_session("session-1"), service.finish_session("session-1")
-    )
+    first, second = await asyncio.gather(service.finish_session("session-1"), service.finish_session("session-1"))
     saved = RoleplayState.model_validate(await checkpoint.load("session-1"))
 
     assert first == second

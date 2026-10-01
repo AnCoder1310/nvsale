@@ -37,10 +37,12 @@ class IngestResponse(BaseModel):
 async def query_copilot(request: CopilotQueryRequest) -> CopilotQueryResponse:
     """Xử lý câu hỏi của tư vấn viên qua AI Sales Copilot Agent."""
     try:
-        result = await copilot_agent.ainvoke({
-            "query": request.query,
-            "target_date": request.target_date,
-        })
+        result = await copilot_agent.ainvoke(
+            {
+                "query": request.query,
+                "target_date": request.target_date,
+            }
+        )
         return CopilotQueryResponse(
             answer=result.get("answer", ""),
             citations=result.get("citations", []),

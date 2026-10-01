@@ -204,9 +204,7 @@ class RoleplayGraph:
             await _save_state(self._checkpoint, state)
         return state
 
-    async def save_evaluation_result(
-        self, session_id: str, result: SessionEvaluationResult
-    ) -> RoleplayState:
+    async def save_evaluation_result(self, session_id: str, result: SessionEvaluationResult) -> RoleplayState:
         state = await self.get_session_state(session_id)
         if state.termination_status is TerminationStatus.ACTIVE:
             raise RoleplaySessionConflictError("cannot evaluate an active practice session")
