@@ -241,7 +241,7 @@ Phụ trách:
 POST /practice/sessions
 POST /practice/{id}/message
 POST /practice/{id}/finish
-POST /practice/{id}/submit-review
+GET  /practice/history?scenario_id={scenario_id}
 ```
 
 Implement:
@@ -270,12 +270,20 @@ src/services/practice.py
 `POST /practice/{id}/finish`:
 - persist final turn and freeze transcript idempotently
 - invoke evaluator once for the transcript/rubric version
+- persist the completed attempt and provisional AI result automatically
 - return provisional result or retryable evaluation status
 
-`POST /practice/{id}/submit-review`:
-- validate session ownership and completed evaluation
-- create one pending Manager review for the selected attempt
-- remain idempotent for duplicate requests
+`GET /practice/history?scenario_id={scenario_id}`:
+- validate current-user ownership
+- return every completed attempt for that Advisor and scenario, newest first
+- expose enough summary data for the scenario card to render the latest result
+- preserve transcript/result access for older attempts
+
+Manager Review Queue:
+- make every completed attempt available for Manager inspection
+- group the default queue by `advisor + scenario`
+- prioritize the latest unreviewed attempt in each group
+- do not require the Manager to review every stored attempt
 
 Persistence mechanism do Chương cung cấp.
 
@@ -366,7 +374,7 @@ Duy phụ trách:
 - evaluation reasoning
 - coaching logic
 - practice start/message backend
-- practice finish/result/submit-review business lifecycle
+- practice finish/result/history business lifecycle
 
 Cần phối hợp với Chương trước khi thay đổi:
 - shared FastAPI setup
@@ -652,7 +660,12 @@ Duy phụ trách:
 ```text
 POST /practice/sessions
 POST /practice/{id}/message
+POST /practice/{id}/finish
+GET  /practice/history?scenario_id={scenario_id}
 ```
+
+`GET /manager/reviews` mặc định trả các group `advisor + scenario` với latest
+unreviewed attempt; review detail vẫn có thể truy cập các attempt cũ trong group.
 
 #### 9. Evaluation backend
 Phụ trách:
@@ -1270,8 +1283,9 @@ Với mỗi criterion:
 - reason
 - improvement suggestion
 
-Hiển thị riêng factual findings và trạng thái `AI draft`. Advisor có thể retry hoặc
-submit attempt hiện tại; chỉ submit mới tạo Manager review.
+Hiển thị riêng factual findings và trạng thái `AI draft`. Mọi attempt hoàn thành được
+lưu tự động. Scenario card hiển thị result gần nhất; Advisor có thể retry hoặc mở
+history để xem transcript/result của các attempt cũ.
 
 Cung cấp transcript view.
 
@@ -1396,7 +1410,7 @@ Không tự ý thay đổi:
 | Evaluation persistence | Chương | Duy |
 | Practice start API | Duy | Chương |
 | Practice message API | Duy | Chương |
-| Practice finish/result/submit-review business flow | Duy | Chương |
+| Practice finish/result/history business flow | Duy | Chương |
 | Evaluation persistence/result API | Chương | Duy |
 | Practice Room UI | An | Duy |
 | Result UI | An | Duy + Đạt |

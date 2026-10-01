@@ -38,6 +38,23 @@ Nếu tài liệu cũ còn nhắc `backend/...`, đường dẫn `src/...` trong
 | **01–02/10** | Product Complete | Benchmark, hardening, history, tester readiness và polish |
 | **03/10** | Sales Tester Release | Sales tester nhận URL + task + feedback form |
 
+## Current attempt/review lifecycle amendment
+
+Các checkpoint đã qua được giữ nguyên như lịch sử kế hoạch. Từ Product Complete
+trở đi, `selected-attempt submission` được thay bằng lifecycle MVP đơn giản hơn:
+
+```text
+Finish attempt
+→ persist transcript + provisional AI evaluation automatically
+→ show latest result on the scenario card
+→ keep every older attempt in scenario history
+→ Manager queue groups by Advisor + Scenario and prioritizes the latest unreviewed attempt
+→ Manager may open any older attempt and approve/edit one specific attempt
+```
+
+Không có private practice hoặc bước Advisor chọn attempt để submit. Việc lưu mọi
+attempt không đồng nghĩa Manager phải review từng attempt.
+
 ---
 
 # 2. Duy — AI Customer Role-play, Coaching Logic & Practice Chat Backend
@@ -285,7 +302,7 @@ Hoàn thiện:
 - Fix benchmark failures.
 - Add more realistic scenarios.
 - Improve coaching feedback.
-- Fix selected-attempt Manager review issues found after MVP.
+- Complete automatic attempt history and latest-attempt Manager queue behavior.
 
 ### Acceptance
 - Không còn P0/P1 bug trên role-play.
@@ -1080,8 +1097,9 @@ MVP pass khi salesperson có thể:
 
 10. See evidence + improvement feedback
 
-11. Retry or submit the selected attempt
-12. Manager opens the submitted attempt, approves/edits it, and saves the official result
+11. Retry or open the scenario's saved attempt history
+12. Manager opens the latest unreviewed attempt by default, may inspect older attempts,
+    then approves/edits one attempt and saves its official result
 ```
 
 MVP không bắt buộc:

@@ -75,10 +75,12 @@ The application composition uses `SQLCheckpointRepository`, selected through
 `DATABASE_URL`, so the same checkpoint contract works with local SQLite and hosted
 PostgreSQL. Role-play model calls use the shared provider factory through strict
 structured-output adapters; provider and malformed-output failures remain visible.
-The session lifecycle additionally needs idempotent finish and selected-attempt submit
-operations at the service/API layer. Finishing creates a provisional AI result; it
-does not automatically enter Manager review. Only an advisor-submitted attempt enters
-the queue and only Manager approval makes it official.
+The session lifecycle additionally needs an idempotent finish operation at the
+service/API layer. Finishing creates and persists one provisional AI result for that
+attempt. Every completed attempt remains available in the advisor's scenario history;
+there is no separate selected-attempt submit operation. The Manager queue groups by
+advisor and scenario and prioritizes the latest unreviewed attempt, while preserving
+access to older attempts. Only Manager approval makes a specific attempt official.
 
 Duy owns the complete practice lifecycle and role-play graph semantics. Chương
 supplies checkpoint, persistence, knowledge and platform integrations. An consumes
@@ -92,4 +94,4 @@ mounted runtime supplies those dependencies and retrieves bounded evidence for e
 recorded factual claim through the shared knowledge service. Every recorded claim
 must receive exactly one factual verdict; missing verdicts invalidate the draft.
 Session ownership checks must still be supplied by the shared authentication boundary
-before exposing submit-review, transcript, or training-result operations to users.
+before exposing attempt history, transcript, or training-result operations to users.
