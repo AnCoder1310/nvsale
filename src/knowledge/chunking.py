@@ -1,57 +1,47 @@
 import json
 from pathlib import Path
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from backend.knowledge.metadata import ChunkMetadata, IngestedChunk, NormalizedDocument
+from src.knowledge.schemas import ChunkMetadata, KnowledgeChunk, KnowledgeDocument
 
 
-def chunk_document(doc: NormalizedDocument, max_chunk_chars: int = 1000) -> list[IngestedChunk]:
-    """Split a NormalizedDocument into one or more IngestedChunks."""
+def chunk_document(
+    doc: KnowledgeDocument,
+    chunk_size: int = 1000,
+    chunk_overlap: int = 100,
+) -> list[KnowledgeChunk]:
+    """Split a KnowledgeDocument into one or more KnowledgeChunks using RecursiveCharacterTextSplitter."""
     content = doc.content.strip()
+    if not content:
+        return []
 
-    # Append sales script context if available for richer retrieval
-    sales_script_text = ""
-    if doc.sales_script:
-        bullets = " ".join([f"- {arg}" for arg in doc.sales_script.core_arguments])
-        sales_script_text = f"\n[Gợi ý bán hàng]: {bullets}\n[Mẫu tin nhắn]: {doc.sales_script.suggested_message}"
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        separators=["\n\n", "\n", ". ", " ", ""],
+    )
+    splits = splitter.split_text(content)
 
-    if len(content) <= max_chunk_chars:
-        chunks_text = [content + sales_script_text]
-    else:
-        # Split on double newline or sentences
-        paragraphs = [p.strip() for p in content.split("\n\n") if p.strip()]
-        chunks_text = []
-        current_chunk = []
-        current_len = 0
-
-        for p in paragraphs:
-            if current_len + len(p) > max_chunk_chars and current_chunk:
-                chunks_text.append("\n\n".join(current_chunk))
-                current_chunk = [p]
-                current_len = len(p)
-            else:
-                current_chunk.append(p)
-                current_len += len(p)
-
-        if current_chunk:
-            chunks_text.append("\n\n".join(current_chunk) + sales_script_text)
-
-    ingested: list[IngestedChunk] = []
-    for idx, text in enumerate(chunks_text):
+    chunks: list[KnowledgeChunk] = []
+    for idx, text in enumerate(splits):
         chunk_id = f"{doc.document_id}_{idx}"
         metadata = ChunkMetadata(
             chunk_id=chunk_id,
             document_id=doc.document_id,
-            document_type=doc.document_type,
+            title=doc.title,
+            document_type=doc.document_type.value if hasattr(doc.document_type, "value") else str(doc.document_type),
             product_model=doc.product_model,
+            competitor_model=doc.competitor_model,
             policy_type=doc.policy_type,
             effective_date=doc.effective_date,
             expiry_date=doc.expiry_date,
-            status=doc.status,
+            status=doc.status.value if hasattr(doc.status, "value") else str(doc.status),
             source=doc.source,
+            version=doc.version,
             chunk_index=idx,
         )
-        ingested.append(
-            IngestedChunk(
+        chunks.append(
+            KnowledgeChunk(
                 chunk_id=chunk_id,
                 document_id=doc.document_id,
                 content=text,
@@ -59,21 +49,25 @@ def chunk_document(doc: NormalizedDocument, max_chunk_chars: int = 1000) -> list
             )
         )
 
-    return ingested
+    return chunks
 
 
-def load_and_chunk_corpus(corpus_path: str | Path = "data/knowledge/corpus.json") -> list[IngestedChunk]:
+def load_and_chunk_corpus(
+    corpus_path: str | Path = "data/knowledge/corpus.json",
+    chunk_size: int = 1000,
+    chunk_overlap: int = 100,
+) -> list[KnowledgeChunk]:
     """Load JSON corpus and chunk all valid normalized documents."""
     path = Path(corpus_path)
     if not path.exists():
         raise FileNotFoundError(f"Corpus file not found: {path}")
 
     raw_items = json.loads(path.read_text(encoding="utf-8"))
-    all_chunks: list[IngestedChunk] = []
+    all_chunks: list[KnowledgeChunk] = []
 
     for item in raw_items:
-        doc = NormalizedDocument.model_validate(item)
-        chunks = chunk_document(doc)
+        doc = KnowledgeDocument.model_validate(item)
+        chunks = chunk_document(doc, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         all_chunks.extend(chunks)
 
     return all_chunks

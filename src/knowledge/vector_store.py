@@ -3,8 +3,8 @@ import math
 from abc import ABC, abstractmethod
 from typing import Any
 
-from backend.knowledge.metadata import ChunkMetadata, IngestedChunk
 from src.config import get_settings
+from src.knowledge.schemas import ChunkMetadata, KnowledgeChunk
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,7 @@ class BaseVectorStore(ABC):
     """Abstract Vector Store Interface (Adapter Pattern)."""
 
     @abstractmethod
-    def upsert_chunks(self, chunks: list[IngestedChunk], embeddings: list[list[float]]) -> None:
+    def upsert_chunks(self, chunks: list[KnowledgeChunk], embeddings: list[list[float]]) -> None:
         """Add or update chunks with their embeddings in the vector database."""
         pass
 
@@ -23,12 +23,12 @@ class BaseVectorStore(ABC):
         query_embedding: list[float],
         top_k: int = 4,
         where: dict[str, Any] | None = None,
-    ) -> list[IngestedChunk]:
+    ) -> list[KnowledgeChunk]:
         """Query top-K similar chunks matching optional metadata filter."""
         pass
 
     @abstractmethod
-    def get_by_id(self, chunk_id: str) -> IngestedChunk | None:
+    def get_by_id(self, chunk_id: str) -> KnowledgeChunk | None:
         """Fetch single chunk by its ID."""
         pass
 
@@ -47,10 +47,10 @@ class InMemoryVectorStore(BaseVectorStore):
     """Lightweight in-memory vector store for unit tests and local execution."""
 
     def __init__(self):
-        self._chunks: dict[str, IngestedChunk] = {}
+        self._chunks: dict[str, KnowledgeChunk] = {}
         self._embeddings: dict[str, list[float]] = {}
 
-    def upsert_chunks(self, chunks: list[IngestedChunk], embeddings: list[list[float]]) -> None:
+    def upsert_chunks(self, chunks: list[KnowledgeChunk], embeddings: list[list[float]]) -> None:
         for chunk, emb in zip(chunks, embeddings):
             self._chunks[chunk.chunk_id] = chunk
             self._embeddings[chunk.chunk_id] = emb
@@ -69,8 +69,8 @@ class InMemoryVectorStore(BaseVectorStore):
         query_embedding: list[float],
         top_k: int = 4,
         where: dict[str, Any] | None = None,
-    ) -> list[IngestedChunk]:
-        candidates: list[tuple[float, IngestedChunk]] = []
+    ) -> list[KnowledgeChunk]:
+        candidates: list[tuple[float, KnowledgeChunk]] = []
 
         for cid, chunk in self._chunks.items():
             emb = self._embeddings.get(cid)
@@ -105,7 +105,7 @@ class InMemoryVectorStore(BaseVectorStore):
         candidates.sort(key=lambda x: x[0], reverse=True)
         return [c[1] for c in candidates[:top_k]]
 
-    def get_by_id(self, chunk_id: str) -> IngestedChunk | None:
+    def get_by_id(self, chunk_id: str) -> KnowledgeChunk | None:
         return self._chunks.get(chunk_id)
 
     def count(self) -> int:
@@ -131,7 +131,7 @@ class ChromaVectorStore(BaseVectorStore):
             name=self.collection_name,
             metadata={"hnsw:space": "cosine"},
         )
-        self._cache: dict[str, IngestedChunk] = {}
+        self._cache: dict[str, KnowledgeChunk] = {}
 
     def _serialize_metadata(self, meta: ChunkMetadata) -> dict[str, Any]:
         result = {}
@@ -142,11 +142,13 @@ class ChromaVectorStore(BaseVectorStore):
                 result[k] = v.isoformat()
             elif hasattr(v, "value"):
                 result[k] = v.value
+            elif isinstance(v, (int, float, bool)):
+                result[k] = v
             else:
                 result[k] = str(v)
         return result
 
-    def upsert_chunks(self, chunks: list[IngestedChunk], embeddings: list[list[float]]) -> None:
+    def upsert_chunks(self, chunks: list[KnowledgeChunk], embeddings: list[list[float]]) -> None:
         if not chunks:
             return
 
@@ -168,7 +170,7 @@ class ChromaVectorStore(BaseVectorStore):
         query_embedding: list[float],
         top_k: int = 4,
         where: dict[str, Any] | None = None,
-    ) -> list[IngestedChunk]:
+    ) -> list[KnowledgeChunk]:
         chroma_where = None
         if where:
             clean_where = {}
@@ -195,7 +197,7 @@ class ChromaVectorStore(BaseVectorStore):
             where=chroma_where,
         )
 
-        matched: list[IngestedChunk] = []
+        matched: list[KnowledgeChunk] = []
         if results and results.get("ids") and len(results["ids"]) > 0:
             for chunk_id in results["ids"][0]:
                 chunk = self.get_by_id(chunk_id)
@@ -204,7 +206,7 @@ class ChromaVectorStore(BaseVectorStore):
 
         return matched
 
-    def get_by_id(self, chunk_id: str) -> IngestedChunk | None:
+    def get_by_id(self, chunk_id: str) -> KnowledgeChunk | None:
         if chunk_id in self._cache:
             return self._cache[chunk_id]
 
@@ -213,7 +215,7 @@ class ChromaVectorStore(BaseVectorStore):
             content = res["documents"][0] if res.get("documents") else ""
             meta_dict = res["metadatas"][0] if res.get("metadatas") else {}
             metadata = ChunkMetadata.model_validate(meta_dict)
-            chunk = IngestedChunk(
+            chunk = KnowledgeChunk(
                 chunk_id=chunk_id,
                 document_id=metadata.document_id,
                 content=content,
