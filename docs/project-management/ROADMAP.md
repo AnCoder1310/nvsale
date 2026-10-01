@@ -9,6 +9,24 @@
 
 # 1. Mốc chung của toàn team
 
+## Source layout dùng cho implementation
+
+Build Phase app chạy từ `src.main:app`, vì vậy mọi runtime production nằm dưới
+`src/`. Không tạo thêm cây `backend/` song song.
+
+```text
+src/agents/copilot/       Copilot LangGraph của Chương
+src/agents/roleplay/      Role-play LangGraph, customer, analyzer, evaluator của Duy
+src/api/                  FastAPI routers
+src/services/             Application services và shared LLM factory
+src/knowledge/            Corpus, ingestion, retrieval và vector store
+src/models/               Shared request/result contracts
+src/persistence/          Durable session/checkpoint adapters
+```
+
+Nếu tài liệu cũ còn nhắc `backend/...`, đường dẫn `src/...` trong mục này và code
+đang chạy là nguồn chính thức.
+
 | Ngày | Milestone | Điều kiện pass |
 |---|---|---|
 | **21–22/09** | Gate 1 + Contract Freeze | Chốt PRD, Wireframe, API contract, RoleplayState, scenario schema, knowledge metadata, evaluation schema |
@@ -80,12 +98,12 @@ evaluation output schema
 Implement:
 
 ```text
-backend/roleplay/state.py
-backend/roleplay/scenario_loader.py
-backend/roleplay/customer_agent.py
-backend/roleplay/turn_analyzer.py
-backend/api/practice_chat.py
-backend/services/practice_service.py
+src/agents/roleplay/state.py
+src/agents/roleplay/scenario_loader.py
+src/agents/roleplay/customer_agent.py
+src/agents/roleplay/turn_analyzer.py
+src/api/practice.py
+src/services/practice.py
 ```
 
 API:
@@ -172,7 +190,7 @@ get_product_comparison()
 Implement:
 
 ```text
-backend/roleplay/evaluator.py
+src/agents/roleplay/evaluator.py
 ```
 
 Output mỗi criterion:
@@ -333,13 +351,10 @@ metadata requirements
 Implement:
 
 ```text
-backend/platform/database.py
-backend/platform/llm_client.py
-backend/platform/config.py
-backend/platform/logging.py
-
-backend/roleplay/checkpoint.py
-backend/roleplay/persistence.py
+src/config.py
+src/services/llm.py
+src/persistence/sqlite_checkpoint.py
+src/main.py
 ```
 
 Flow:
@@ -374,14 +389,13 @@ RoleplayGraph
 Implement:
 
 ```text
-backend/knowledge/chunking.py
-backend/knowledge/embeddings.py
-backend/knowledge/vector_store.py
-backend/knowledge/retrieval_service.py
+src/knowledge/chunking.py
+src/knowledge/embedding.py
+src/knowledge/vector_store.py
+src/knowledge/retrieval_service.py
 
-backend/copilot/retrieval.py
-backend/copilot/answer_generator.py
-backend/copilot/graph.py
+src/agents/copilot/answer_generator.py
+src/agents/copilot/graph.py
 ```
 
 Flow:
@@ -451,7 +465,7 @@ effective_date
 Hoàn thiện:
 
 ```text
-backend/roleplay/knowledge_tools.py
+src/integrations/practice_runtime.py
 checkpoint integration
 persistence integration
 session recovery
@@ -577,9 +591,9 @@ scripts/ingestion/
 ├── deduplicate.py
 └── build_corpus.py
 
-backend/knowledge/
+src/knowledge/
 ├── ingestion.py
-└── metadata.py
+└── schemas.py
 ```
 
 Support:

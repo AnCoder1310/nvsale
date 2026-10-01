@@ -65,11 +65,11 @@ Kiểm tra format:
 Kết quả: FAIL; sáu file cần được format:
 
 ```
-backend/knowledge/metadata.py
-backend/roleplay/contracts.py
-backend/roleplay/graph.py
-backend/roleplay/state.py
-backend/services/practice_service.py
+src/models/evaluation.py
+src/agents/roleplay/contracts.py
+src/agents/roleplay/graph.py
+src/agents/roleplay/state.py
+src/services/practice.py
 tests/test_roleplay/test_practice_service.py
 ```
 

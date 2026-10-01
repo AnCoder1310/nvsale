@@ -113,8 +113,8 @@ Chương phụ trách runtime/tool/persistence nodes trong cùng graph.
 Implement:
 
 ```text
-backend/roleplay/customer_agent.py
-backend/roleplay/prompts/
+src/agents/roleplay/customer_agent.py
+src/agents/roleplay/prompts/
 ```
 
 AI Customer Agent cần:
@@ -135,7 +135,7 @@ AI Customer Agent cần:
 Phụ trách:
 
 ```text
-backend/roleplay/state.py
+src/agents/roleplay/state.py
 ```
 
 State fields:
@@ -180,7 +180,7 @@ Scenario format hỗ trợ:
 Implement:
 
 ```text
-backend/roleplay/scenario_loader.py
+src/agents/roleplay/scenario_loader.py
 ```
 
 Phối hợp với Đạt về scenario content.
@@ -189,7 +189,7 @@ Phối hợp với Đạt về scenario content.
 Implement:
 
 ```text
-backend/roleplay/turn_analyzer.py
+src/agents/roleplay/turn_analyzer.py
 ```
 
 Phân tích mỗi salesperson turn để phát hiện:
@@ -247,8 +247,8 @@ POST /practice/{id}/submit-review
 Implement:
 
 ```text
-backend/api/practice_chat.py
-backend/services/practice_service.py
+src/api/practice.py
+src/services/practice.py
 ```
 
 `POST /practice/sessions`:
@@ -283,7 +283,7 @@ Persistence mechanism do Chương cung cấp.
 Phụ trách:
 
 ```text
-backend/roleplay/evaluator.py
+src/agents/roleplay/evaluator.py
 ```
 
 Evaluation input:
@@ -464,7 +464,7 @@ answer / abstain
 Implement:
 
 ```text
-backend/copilot/
+src/agents/copilot/
 ├── graph.py
 ├── state.py
 ├── prompts.py
@@ -517,7 +517,7 @@ Chương phụ trách phần runtime sau khi corpus đã được Đạt chuẩn
 Chương phụ trách:
 
 ```text
-backend/knowledge/
+src/knowledge/
 ├── chunking.py
 ├── embeddings.py
 ├── vector_store.py
@@ -554,8 +554,8 @@ RoleplayGraph
 Đạt phụ trách:
 
 ```text
-backend/knowledge/ingestion.py
-backend/knowledge/metadata.py
+src/knowledge/ingestion.py
+src/models/evaluation.py
 ```
 
 bao gồm ingestion orchestration và metadata schema/validation.
@@ -585,10 +585,8 @@ Phụ trách:
 Implement:
 
 ```text
-backend/roleplay/
-├── checkpoint.py
-├── persistence.py
-└── knowledge_tools.py
+src/persistence/sqlite_checkpoint.py
+src/integrations/practice_runtime.py
 ```
 
 Trong `RoleplayGraph`:
@@ -618,7 +616,7 @@ next customer turn
 Co-own:
 
 ```text
-backend/roleplay/graph.py
+src/agents/roleplay/graph.py
 ```
 
 Chương phụ trách:
@@ -709,13 +707,11 @@ Phối hợp với Đạt về corpus metadata.
 Phụ trách:
 
 ```text
-backend/platform/
-├── database.py
-├── llm_client.py
-├── logging.py
-├── config.py
-├── errors.py
-└── dependencies.py
+src/config.py
+src/services/llm.py
+src/main.py
+src/persistence/
+src/integrations/
 ```
 
 Bao gồm:
@@ -787,8 +783,8 @@ Cần phối hợp với Đạt trước khi thay đổi:
 - corpus labeling conventions
 
 Không tự ý thay đổi phần do Đạt owner:
-- `backend/knowledge/ingestion.py`
-- `backend/knowledge/metadata.py`
+- `src/knowledge/ingestion.py`
+- `src/models/evaluation.py`
 - raw/normalized corpus preprocessing
 - automated evaluation runner và metrics implementation
 
@@ -869,12 +865,12 @@ Cung cấp normalized data cho knowledge runtime của Chương.
 Đạt phụ trách coding cho data-to-knowledge boundary:
 
 ```text
-backend/knowledge/
+src/knowledge/
 ├── ingestion.py
-└── metadata.py
+└── schemas.py
 ```
 
-`metadata.py` phụ trách:
+`schemas.py` phụ trách:
 
 ```text
 metadata schema
@@ -1518,8 +1514,8 @@ Không tự ý thay đổi:
 ## Duy
 
 ```text
-backend/
-├── roleplay/
+src/
+├── agents/roleplay/
 │   ├── graph.py
 │   ├── state.py
 │   ├── customer_agent.py
@@ -1527,56 +1523,36 @@ backend/
 │   ├── turn_analyzer.py
 │   ├── evaluator.py
 │   └── prompts/
-│
-├── api/
-│   └── practice_chat.py
-│
-└── services/
-    └── practice_service.py
+├── api/practice.py
+├── services/practice.py
+└── models/evaluation.py
 ```
 
-`roleplay/graph.py` do Duy làm editor-owner; Chương review các boundary liên quan
+`src/agents/roleplay/graph.py` do Duy làm editor-owner; Chương review các boundary liên quan
 runtime, checkpoint, persistence và shared tools.
 
 ## Chương
 
 ```text
-backend/
-├── copilot/
+src/
+├── agents/copilot/
 │   ├── graph.py
 │   ├── state.py
-│   ├── prompts.py
 │   ├── intent_router.py
-│   ├── retrieval.py
-│   ├── reranker.py
 │   ├── answer_generator.py
-│   ├── citation_validator.py
 │   └── guardrails.py
 │
 ├── knowledge/
 │   ├── chunking.py
-│   ├── embeddings.py
+│   ├── embedding.py
 │   ├── vector_store.py
-│   ├── policy_versioning.py
+│   ├── ingestion.py
+│   ├── schemas.py
 │   └── retrieval_service.py
 │
-├── roleplay/
-│   ├── checkpoint.py
-│   ├── persistence.py
-│   └── knowledge_tools.py
-│
-├── api/
-│   ├── copilot.py
-│   ├── practice_result.py
-│   └── manager.py
-│
-└── platform/
-    ├── database.py
-    ├── llm_client.py
-    ├── logging.py
-    ├── config.py
-    ├── errors.py
-    └── dependencies.py
+├── api/copilot.py
+├── services/llm.py
+└── config.py
 ```
 
 ## Đạt
@@ -1589,10 +1565,9 @@ data/
 ├── scenarios/
 └── evaluation/
 
-backend/
-└── knowledge/
-    ├── ingestion.py
-    └── metadata.py
+src/knowledge/
+├── ingestion.py
+└── schemas.py
 
 scripts/
 ├── ingestion/

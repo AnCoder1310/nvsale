@@ -76,7 +76,7 @@ the queue and only Manager approval makes it official.
 Duy owns the complete practice lifecycle and role-play graph semantics. Chương
 supplies checkpoint, persistence, knowledge and platform integrations. An consumes
 public scenario/session DTOs only. Evaluation uses the shared five criteria and 1–5
-scale from `backend/knowledge/metadata.py`, supports `ASSESSED`, `NOT_OBSERVED`, and
+scale from `src/models/evaluation.py`, supports `ASSESSED`, `NOT_OBSERVED`, and
 `INSUFFICIENT_EVIDENCE`, and requires verified transcript evidence for every assessed
 score.
 
