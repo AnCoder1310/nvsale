@@ -1,3 +1,4 @@
+import json
 from collections import defaultdict
 from datetime import date
 from pathlib import Path
@@ -19,7 +20,8 @@ class SchemaQueueRunnable:
 
     async def ainvoke(self, messages):
         self.owner.calls.append((self.schema, messages))
-        return self.owner.outputs[self.schema].pop(0)
+        output = self.owner.outputs[self.schema].pop(0)
+        return output(messages) if callable(output) else output
 
 
 class SchemaQueueModel:
@@ -70,8 +72,11 @@ async def test_composed_service_runs_practice_through_draft_evaluation(tmp_path:
             ]
         }
     ]
-    model.outputs[EvaluationDraft] = [
-        {
+
+    def evaluation_output(messages):
+        context = json.loads(messages[1].content.removeprefix("CONTEXT_JSON:\n"))
+        claim = context["final_state"]["factual_claims"][0]
+        return {
             "evaluations": [
                 {
                     "criterion": criterion,
@@ -86,9 +91,25 @@ async def test_composed_service_runs_practice_through_draft_evaluation(tmp_path:
                     "policy_accuracy",
                     "closing_next_step",
                 )
-            ]
+            ],
+            "factual_findings": [
+                {
+                    "claim": claim["text"],
+                    "message_id": claim["message_id"],
+                    "status": "supported",
+                    "source_references": [
+                        {
+                            "source_id": "warranty-1",
+                            "version": "2026.1",
+                            "quote": "VF 5 áp dụng chính sách bảo hành",
+                        }
+                    ],
+                    "reason": "Nguồn được duyệt xác nhận có chính sách bảo hành.",
+                }
+            ],
         }
-    ]
+
+    model.outputs[EvaluationDraft] = [evaluation_output]
     retriever = RecordingRetriever()
     service = build_practice_service(
         settings=Settings(database_url=f"sqlite:///{tmp_path / 'practice.db'}"),

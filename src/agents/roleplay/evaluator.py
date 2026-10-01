@@ -86,6 +86,7 @@ class RoleplayEvaluator:
             )
             draft = EvaluationDraft.model_validate(raw_draft)
             self._validate_transcript_evidence(draft, state.messages)
+            self._validate_factual_claim_coverage(draft, state)
             self._validate_factual_sources(draft, state.messages, knowledge_evidence)
             assessed_scores = [
                 evaluation.score
@@ -130,6 +131,19 @@ class RoleplayEvaluator:
                 raise EvaluationError(f"evidence references unknown message_id: {evidence.message_id}")
             if evidence.quote not in message:
                 raise EvaluationError(f"evidence quote is not exact for message_id: {evidence.message_id}")
+
+    @staticmethod
+    def _validate_factual_claim_coverage(
+        draft: EvaluationDraft,
+        state: RoleplayState,
+    ) -> None:
+        expected = {(claim.message_id, claim.text) for claim in state.factual_claims}
+        actual_items = [(finding.message_id, finding.claim) for finding in draft.factual_findings]
+        if len(actual_items) != len(set(actual_items)):
+            raise EvaluationError("factual findings must not contain duplicate claims")
+        missing = expected - set(actual_items)
+        if missing:
+            raise EvaluationError("evaluation omitted recorded factual claims")
 
     @staticmethod
     def _validate_factual_sources(
