@@ -16,15 +16,23 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel
 
 from src.agents.roleplay.contracts import ScenarioContract
-from src.agents.roleplay.customer_agent import CustomerModelOutput
-from src.agents.roleplay.evaluator import EvaluationDraft
+from src.agents.roleplay.customer_agent import CustomerAgent, CustomerModelOutput
+from src.agents.roleplay.evaluator import EvaluationDraft, RoleplayEvaluator
+from src.agents.roleplay.graph import RoleplayGraph
 from src.agents.roleplay.prompts import (
     TURN_ANALYZER_PROMPT_VERSION,
     TURN_ANALYZER_SYSTEM_PROMPT,
 )
+from src.agents.roleplay.scenario_loader import ScenarioRepository
 from src.agents.roleplay.state import RoleplayState
-from src.agents.roleplay.turn_analyzer import TurnAnalysis
+from src.agents.roleplay.turn_analyzer import TurnAnalysis, TurnAnalyzer
+from src.config import Settings, get_settings
+from src.knowledge.retrieval_service import RetrievalService, get_retrieval_service
 from src.services.llm import get_llm
+from src.services.practice import PracticeService
+
+from .practice_knowledge import RetrievalKnowledgeEvidenceProvider
+from .practice_persistence import SQLCheckpointRepository
 
 StructuredOutput = TypeVar("StructuredOutput", bound=BaseModel)
 LLMFactory = Callable[[], BaseChatModel]
@@ -114,6 +122,33 @@ class SharedLLMEvaluationModel:
             system_prompt=system_prompt,
             context=context,
         )
+
+
+def build_practice_service(
+    *,
+    settings: Settings | None = None,
+    model_factory: LLMFactory = get_llm,
+    retrieval_service: RetrievalService | None = None,
+    checkpoint: SQLCheckpointRepository | None = None,
+) -> PracticeService:
+    """Compose the production Practice vertical slice from shared adapters."""
+
+    resolved_settings = settings or get_settings()
+    scenarios = ScenarioRepository()
+    resolved_checkpoint = checkpoint or SQLCheckpointRepository(resolved_settings.database_url)
+    resolved_retrieval = retrieval_service or get_retrieval_service()
+    graph = RoleplayGraph(
+        scenarios,
+        TurnAnalyzer(SharedLLMTurnAnalysisModel(model_factory)),
+        CustomerAgent(SharedLLMCustomerModel(model_factory)),
+        resolved_checkpoint,
+    )
+    return PracticeService(
+        graph,
+        scenarios,
+        evaluator=RoleplayEvaluator(SharedLLMEvaluationModel(model_factory)),
+        knowledge_evidence=RetrievalKnowledgeEvidenceProvider(resolved_retrieval),
+    )
 
 
 def _turn_analysis_context(
