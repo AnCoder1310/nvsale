@@ -82,7 +82,6 @@ def get_llm(
             api_key=api_key,
             base_url="https://openrouter.ai/api/v1",
             temperature=temp,
-            extra_body={"provider": {"require_parameters": True}},
         )
 
     if prov == "gemini":
