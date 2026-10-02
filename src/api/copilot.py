@@ -5,6 +5,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from src.agents.copilot.answer_generator import CopilotGenerationError
 from src.agents.copilot.graph import copilot_agent
 from src.knowledge.retrieval_service import get_retrieval_service
 
@@ -53,6 +54,8 @@ async def query_copilot(request: CopilotQueryRequest) -> CopilotQueryResponse:
             intent=result.get("intent"),
             product_model=result.get("product_model"),
         )
+    except CopilotGenerationError as exc:
+        raise HTTPException(status_code=503, detail="Copilot is temporarily unavailable. Please retry.") from exc
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi xử lý Copilot: {str(e)}")
 

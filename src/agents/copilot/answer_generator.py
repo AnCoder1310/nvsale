@@ -10,6 +10,11 @@ from src.services.llm import get_llm
 
 logger = logging.getLogger(__name__)
 
+
+class CopilotGenerationError(RuntimeError):
+    """The configured model could not produce a grounded Copilot response."""
+
+
 SYSTEM_PROMPT = """Bạn là AI Sales Copilot chuyên nghiệp hỗ trợ tư vấn viên bán xe ô tô điện VinFast (VinFast Auto).
 
 NHIỆM VỤ:
@@ -124,12 +129,14 @@ async def generate_copilot_response(state: CopilotState) -> dict[str, Any]:
         or (settings.grok_api_key and len(settings.grok_api_key) > 10)
     )
 
-    if not has_valid_key or settings.app_env == "test":
+    if settings.app_env == "test":
         fallback = _fallback_extract_from_chunks(chunks, query)
         fallback["context_text"] = context_str
         fallback["citations"] = citations
         fallback["is_abstain"] = False
         return fallback
+    if not has_valid_key:
+        raise CopilotGenerationError("Copilot LLM provider is not configured")
 
     try:
         llm = get_llm()
@@ -166,9 +173,5 @@ async def generate_copilot_response(state: CopilotState) -> dict[str, Any]:
             "is_abstain": bool(parsed.get("is_abstain", False)),
         }
     except Exception as e:
-        logger.info("LLM invoke failed or unconfigured, using deterministic chunk extraction: %s", e)
-        fallback = _fallback_extract_from_chunks(chunks, query)
-        fallback["context_text"] = context_str
-        fallback["citations"] = citations
-        fallback["is_abstain"] = False
-        return fallback
+        logger.warning("Copilot LLM generation failed: %s", type(e).__name__)
+        raise CopilotGenerationError("Copilot LLM generation failed") from e
