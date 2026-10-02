@@ -13,12 +13,19 @@ import {
 } from '../common/Icons';
 import { Badge } from '../common/Badge';
 import { copilotApi } from '../../api/copilotApi';
+import { generateCopilotAnswer } from '../../lib/copilotEngine';
 import { FAQ_QUESTIONS, CHEAT_SHEET_DATA } from '../../data/faqData';
 import { createId, getCurrentTimeString } from '../../lib/id';
 
 export function CopilotView({ onOpenDocument, initialQuery = '' }) {
   const [filterDomain, setFilterDomain] = useState('all');
   const [inputMessage, setInputMessage] = useState(initialQuery || '');
+  const [prevInitialQuery, setPrevInitialQuery] = useState(initialQuery);
+
+  if (initialQuery !== prevInitialQuery) {
+    setPrevInitialQuery(initialQuery);
+    setInputMessage(initialQuery);
+  }
   const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
   const [messages, setMessages] = useState([
@@ -52,6 +59,8 @@ export function CopilotView({ onOpenDocument, initialQuery = '' }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
+
+
   const handleSend = async (textToSend) => {
     const queryText = (textToSend || inputMessage).trim();
     if (!queryText || loading) return;
@@ -68,37 +77,62 @@ export function CopilotView({ onOpenDocument, initialQuery = '' }) {
     setLoading(true);
 
     try {
-      const response = await copilotApi.query({ query: queryText });
+      let aiData = null;
+
+      // 1. Try calling the backend Copilot API first
+      try {
+        const response = await copilotApi.query({ query: queryText });
+        if (response && response.answer && !response.is_abstain) {
+          aiData = {
+            content: response.answer,
+            citations: response.citations || [],
+            talking_points: response.talking_points || [],
+            suggested_message: response.suggested_message || '',
+            suggested_next_question: response.suggested_next_question || '',
+          };
+        }
+      } catch (backendError) {
+        console.warn('Backend Copilot API offline/unavailable, falling back to local Copilot engine:', backendError);
+      }
+
+      // 2. If backend didn't return an answer or failed, generate via grounded knowledge engine
+      if (!aiData) {
+        await new Promise((r) => setTimeout(r, 600));
+        const localAnswer = generateCopilotAnswer(queryText, filterDomain);
+        aiData = {
+          content: localAnswer.answer,
+          citations: localAnswer.citations,
+          talking_points: localAnswer.talking_points,
+          suggested_message: localAnswer.suggested_message,
+          suggested_next_question: localAnswer.suggested_next_question,
+        };
+      }
+
       const aiMsg = {
         id: createId('ai'),
         role: 'assistant',
         time: getCurrentTimeString(),
-        content: response.answer || response.response || 'Đã tìm thấy thông tin từ kho tài liệu.',
-        citations: response.citations || [],
-        talking_points: response.talking_points || [],
-        suggested_message: response.suggested_message || '',
-        suggested_next_question: response.suggested_next_question || '',
+        content: aiData.content,
+        citations: aiData.citations || [],
+        talking_points: aiData.talking_points || [],
+        suggested_message: aiData.suggested_message || '',
+        suggested_next_question: aiData.suggested_next_question || '',
       };
       setMessages((prev) => [...prev, aiMsg]);
-    } catch {
-      const fallbackAiMsg = {
-        id: createId('ai-err'),
+    } catch (err) {
+      console.error('Fatal copilot query error:', err);
+      const fallback = generateCopilotAnswer(queryText, filterDomain);
+      const aiMsg = {
+        id: createId('ai'),
         role: 'assistant',
         time: getCurrentTimeString(),
-        content:
-          'Xin lỗi bạn, kết nối đến dịch vụ Copilot đang bận hoặc gián đoạn. Dưới đây là thông tin tham khảo dựa trên quy chuẩn bán hàng 2026:\n\n• Chính sách pin: Khách thuê pin được bảo hành đổi mới khi dung lượng SOH < 70%.\n• Ưu đãi trước bạ: 0% theo quy định Nhà nước.\n• Mạng lưới V-GREEN: 150.000+ cổng sạc toàn quốc, hỗ trợ sạc nhanh DC 10-70% trong ~24-30 phút.',
-        talking_points: [
-          'Kiểm tra tình trạng SOH pin thực tế qua VinFast App',
-          'Tư vấn gói thuê pin linh hoạt theo quãng đường',
-        ],
-        citations: [
-          {
-            document_id: 'POLICY_BATTERY_RENTAL_CONTRACT_20260801',
-            title: 'HỢP ĐỒNG CHO THUÊ PIN XE ĐIỆN VINFAST 2026',
-          },
-        ],
+        content: fallback.answer,
+        citations: fallback.citations,
+        talking_points: fallback.talking_points,
+        suggested_message: fallback.suggested_message,
+        suggested_next_question: fallback.suggested_next_question,
       };
-      setMessages((prev) => [...prev, fallbackAiMsg]);
+      setMessages((prev) => [...prev, aiMsg]);
     } finally {
       setLoading(false);
     }
