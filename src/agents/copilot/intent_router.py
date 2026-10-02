@@ -48,6 +48,14 @@ def classify_intent(query: str) -> str:
     """Classify the sales advisory query intent."""
     q = query.lower()
 
+    # A model outside the supported corpus must not be answered from a different VF model.
+    mentioned_models = re.findall(r"\bvf\s*\d+\b", query, flags=re.IGNORECASE)
+    if any(
+        re.sub(r"\s+", "", model).upper() not in {"VF3", "VF5", "VF6", "VF7", "VF8", "VF9"}
+        for model in mentioned_models
+    ):
+        return "unsupported"
+
     # Out-of-scope / Unsupported queries
     unsupported_keywords = [
         "thời tiết",

@@ -8,6 +8,7 @@ from src.agents.copilot.guardrails import apply_guardrails
 from src.agents.copilot.intent_router import classify_intent, extract_models
 from src.agents.copilot.state import CopilotState
 from src.knowledge.retrieval_service import get_retrieval_service
+from src.knowledge.schemas import DocumentType
 
 
 async def classify_intent_node(state: CopilotState) -> dict[str, Any]:
@@ -38,12 +39,29 @@ async def retrieve_node(state: CopilotState) -> dict[str, Any]:
     target_d = date.fromisoformat(date_str) if date_str else date.today()
 
     retriever = get_retrieval_service()
-    chunks = retriever.retrieve(
-        query=query,
-        product_model=product_model,
-        target_date=target_d,
-        top_k=4,
-    )
+    if state.get("intent") == "promotion" and product_model:
+        # Price PDFs also contain many unrelated tables. Search within current
+        # price lists, then keep only a chunk that actually mentions the model
+        # and the vehicle MSRP rather than charger/paint-option prices.
+        price_candidates = retriever.retrieve(
+            query=query,
+            product_model=product_model,
+            document_type=DocumentType.PRICE_LIST.value,
+            target_date=target_d,
+            top_k=24,
+        )
+        chunks = [
+            chunk
+            for chunk in price_candidates
+            if product_model.casefold() in chunk.content.casefold() and "Giá bán bán lẻ đề xuất" in chunk.content
+        ][:1]
+    else:
+        chunks = retriever.retrieve(
+            query=query,
+            product_model=product_model,
+            target_date=target_d,
+            top_k=4,
+        )
 
     chunks_data = [
         {

@@ -26,8 +26,10 @@ Hãy trả về DUY NHẤT một chuỗi JSON hợp lệ theo cấu trúc sau:
     "answer": "Câu trả lời chi tiết và chính xác...",
     "talking_points": ["Luận điểm 1", "Luận điểm 2"],
     "suggested_message": "Dạ em chào anh/chị, về xe...",
-    "suggested_next_question": "Anh/chị dự định..."
+    "suggested_next_question": "Anh/chị dự định...",
+    "is_abstain": false
 }
+Đặt is_abstain=true nếu Context không chứa bằng chứng đủ để xác nhận câu trả lời; không đoán hoặc trích dẫn tài liệu không hỗ trợ kết luận.
 """
 
 
@@ -157,11 +159,11 @@ async def generate_copilot_response(state: CopilotState) -> dict[str, Any]:
         return {
             "context_text": context_str,
             "answer": parsed.get("answer", ""),
-            "citations": citations,
+            "citations": [] if parsed.get("is_abstain", False) else citations,
             "talking_points": parsed.get("talking_points", []),
             "suggested_message": parsed.get("suggested_message", ""),
             "suggested_next_question": parsed.get("suggested_next_question", ""),
-            "is_abstain": False,
+            "is_abstain": bool(parsed.get("is_abstain", False)),
         }
     except Exception as e:
         logger.info("LLM invoke failed or unconfigured, using deterministic chunk extraction: %s", e)
