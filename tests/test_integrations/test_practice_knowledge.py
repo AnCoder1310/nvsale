@@ -31,10 +31,17 @@ def knowledge_chunk(chunk_id: str, content: str) -> KnowledgeChunk:
 
 class RecordingRetriever:
     def __init__(self) -> None:
-        self.calls: list[tuple[str, int]] = []
+        self.calls: list[tuple[str, int, str | None, str | None]] = []
 
-    def retrieve(self, query: str, *, top_k: int = 4) -> list[KnowledgeChunk]:
-        self.calls.append((query, top_k))
+    def retrieve(
+        self,
+        query: str,
+        *,
+        top_k: int = 4,
+        product_model: str | None = None,
+        document_type: str | None = None,
+    ) -> list[KnowledgeChunk]:
+        self.calls.append((query, top_k, product_model, document_type))
         return [
             knowledge_chunk("chunk-shared", "Nội dung chính sách đã phê duyệt."),
             knowledge_chunk(f"chunk-{len(self.calls)}", f"Evidence cho {query}"),
@@ -61,8 +68,8 @@ async def test_provider_retrieves_each_unique_claim_and_deduplicates_chunks():
     evidence = await provider.for_session(scenario, state)
 
     assert retriever.calls == [
-        ("VF 5 có chính sách bảo hành", 2),
-        ("VF 5 có ưu đãi", 2),
+        ("VF 5 có chính sách bảo hành", 2, "VF 5", None),
+        ("VF 5 có ưu đãi", 2, "VF 5", None),
     ]
     assert [item.source_id for item in evidence] == ["chunk-shared", "chunk-1", "chunk-2"]
     assert all(item.version == "2026.1" for item in evidence)
@@ -78,6 +85,26 @@ async def test_provider_returns_no_evidence_when_advisor_made_no_factual_claims(
 
     assert evidence == []
     assert retriever.calls == []
+
+
+@pytest.mark.asyncio
+async def test_provider_uses_model_and_msrp_table_for_price_claim():
+    scenario, state = scenario_and_state()
+    state.factual_claims = [AdvisorFactualClaim(message_id="m1", text="VF 5 Plus giá 100 triệu", category="price")]
+
+    class PriceRetriever(RecordingRetriever):
+        def retrieve(self, query, *, top_k=4, product_model=None, document_type=None):
+            self.calls.append((query, top_k, product_model, document_type))
+            return [
+                knowledge_chunk("charger", "VF 5 bộ sạc 11.000.000 VNĐ"),
+                knowledge_chunk("msrp", "Giá bán bán lẻ đề xuất\nVF 5 | Plus | 496.000.000 VNĐ"),
+            ]
+
+    retriever = PriceRetriever()
+    evidence = await RetrievalKnowledgeEvidenceProvider(retriever).for_session(scenario, state)
+
+    assert retriever.calls == [("VF 5 Plus giá 100 triệu", 24, "VF 5", "price_list")]
+    assert [item.source_id for item in evidence] == ["msrp"]
 
 
 @pytest.mark.asyncio

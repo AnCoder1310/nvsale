@@ -37,7 +37,14 @@ class RecordingRetriever:
     def __init__(self) -> None:
         self.queries: list[str] = []
 
-    def retrieve(self, query: str, *, top_k: int = 4):
+    def retrieve(
+        self,
+        query: str,
+        *,
+        top_k: int = 4,
+        product_model: str | None = None,
+        document_type: str | None = None,
+    ):
         self.queries.append(query)
         return [
             KnowledgeChunk(
