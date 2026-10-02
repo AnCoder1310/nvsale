@@ -108,6 +108,19 @@ async def test_provider_uses_model_and_msrp_table_for_price_claim():
 
 
 @pytest.mark.asyncio
+async def test_range_per_charge_claim_uses_product_specs_even_when_labeled_charging():
+    scenario, state = scenario_and_state()
+    state.factual_claims = [
+        AdvisorFactualClaim(message_id="m1", text="đi được 1.000 km mỗi lần sạc", category="battery_charging")
+    ]
+    retriever = RecordingRetriever()
+
+    await RetrievalKnowledgeEvidenceProvider(retriever).for_session(scenario, state)
+
+    assert retriever.calls == [("đi được 1.000 km mỗi lần sạc", 3, "VF 5", "product_specs")]
+
+
+@pytest.mark.asyncio
 async def test_provider_rejects_mismatched_scenario():
     _, state = scenario_and_state()
     other_scenario = ScenarioRepository(SCENARIOS).get("SCENARIO_02_VF7_VS_CX5")

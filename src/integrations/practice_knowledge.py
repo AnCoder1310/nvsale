@@ -60,7 +60,10 @@ class RetrievalKnowledgeEvidenceProvider:
             if product_model and claim.category == "price":
                 document_type = DocumentType.PRICE_LIST.value
                 top_k = 24  # The MSRP table is one small chunk in a long official PDF.
-            elif product_model and claim.category == "product":
+            elif product_model and (
+                claim.category == "product"
+                or (claim.category == "battery_charging" and re.search(r"\bkm\b|quãng đường|đi được", claim.text, re.I))
+            ):
                 document_type = DocumentType.PRODUCT_SPECS.value
 
             candidates = self._retrieval_service.retrieve(
