@@ -17,6 +17,35 @@ import { generateCopilotAnswer } from '../../lib/copilotEngine';
 import { FAQ_QUESTIONS, CHEAT_SHEET_DATA } from '../../data/faqData';
 import { createId, getCurrentTimeString } from '../../lib/id';
 
+function renderFormattedContent(text) {
+  if (!text) return null;
+  const lines = text.split('\n');
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      {lines.map((line, lIdx) => {
+        if (!line.trim()) {
+          return <div key={lIdx} style={{ height: 6 }} />;
+        }
+        const parts = line.split(/(\*\*[^*]+\*\*)/g);
+        return (
+          <div key={lIdx} style={{ lineHeight: 1.55 }}>
+            {parts.map((part, pIdx) => {
+              if (part.startsWith('**') && part.endsWith('**')) {
+                return (
+                  <strong key={pIdx} style={{ color: '#111111', fontWeight: 700 }}>
+                    {part.slice(2, -2)}
+                  </strong>
+                );
+              }
+              return part;
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function CopilotView({ onOpenDocument, initialQuery = '' }) {
   const [filterDomain, setFilterDomain] = useState('all');
   const [inputMessage, setInputMessage] = useState(initialQuery || '');
@@ -244,8 +273,8 @@ export function CopilotView({ onOpenDocument, initialQuery = '' }) {
                   </div>
 
                   {/* Body text */}
-                  <div style={{ fontSize: '0.92rem', color: '#222222', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                    {msg.content}
+                  <div style={{ fontSize: '0.92rem', color: '#222222' }}>
+                    {renderFormattedContent(msg.content)}
                   </div>
 
                   {/* Talking points recommendation box */}
