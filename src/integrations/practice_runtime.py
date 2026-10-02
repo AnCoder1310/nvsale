@@ -117,11 +117,20 @@ class SharedLLMEvaluationModel:
         system_prompt: str,
         context: dict[str, Any],
     ) -> EvaluationDraft:
-        return await self._invoker.invoke(
-            EvaluationDraft,
-            system_prompt=system_prompt,
-            context=context,
-        )
+        # One bounded retry covers transient provider/structured-output failures.
+        # The frozen transcript and evidence are unchanged between attempts.
+        try:
+            return await self._invoker.invoke(
+                EvaluationDraft,
+                system_prompt=system_prompt,
+                context=context,
+            )
+        except StructuredModelInvocationError:
+            return await self._invoker.invoke(
+                EvaluationDraft,
+                system_prompt=system_prompt,
+                context=context,
+            )
 
 
 def build_practice_service(

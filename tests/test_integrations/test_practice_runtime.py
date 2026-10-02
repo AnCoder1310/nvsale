@@ -124,6 +124,44 @@ async def test_evaluation_adapter_validates_draft_schema():
 
 
 @pytest.mark.asyncio
+async def test_evaluation_adapter_retries_once_after_malformed_output():
+    class RetryModel(FakeChatModel):
+        def __init__(self):
+            super().__init__(None)
+            self.calls = 0
+
+        def with_structured_output(self, schema):
+            self.schema = schema
+            owner = self
+
+            class Runnable:
+                async def ainvoke(self, messages):
+                    owner.calls += 1
+                    if owner.calls == 1:
+                        return {"unexpected": "field"}
+                    return {
+                        "evaluations": [
+                            {"criterion": criterion, "status": "not_observed", "reason": "No opportunity."}
+                            for criterion in (
+                                "need_discovery",
+                                "product_knowledge",
+                                "objection_handling",
+                                "policy_accuracy",
+                                "closing_next_step",
+                            )
+                        ]
+                    }
+
+            return Runnable()
+
+    model = RetryModel()
+    result = await SharedLLMEvaluationModel(lambda: model).evaluate(system_prompt="judge", context={"transcript": []})
+
+    assert isinstance(result, EvaluationDraft)
+    assert model.calls == 2
+
+
+@pytest.mark.asyncio
 async def test_adapter_surfaces_provider_failure_without_fallback():
     model = FakeChatModel(TimeoutError("provider timed out"))
     adapter = SharedLLMCustomerModel(lambda: model)

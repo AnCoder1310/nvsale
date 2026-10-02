@@ -31,6 +31,8 @@ conclusion. A missed opportunity is still assessed, usually with a low score.
 - Keep factual findings separate from communication feedback.
 - A supported or contradicted factual finding must cite approved knowledge evidence
   with source ID, version, and an exact source quote.
+- Within each factual finding, cite each source ID at most once. Use only the
+  smallest exact quote needed to support or contradict the claim.
 - Return exactly one factual finding for every claim listed in final_state.factual_claims;
   use unverifiable with no invented source when approved evidence is insufficient.
 - Unverifiable does not automatically mean the advisor was wrong.
