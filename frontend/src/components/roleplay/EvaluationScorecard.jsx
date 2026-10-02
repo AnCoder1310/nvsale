@@ -1,8 +1,10 @@
+import { useMemo } from 'react';
 import {
   RefreshIcon,
   BookIcon,
   ClockIcon,
 } from '../common/Icons';
+import { generateEvaluationResult } from '../../lib/evaluationEngine.js';
 import { Badge } from '../common/Badge';
 import { Button } from '../common/Button';
 
@@ -12,29 +14,39 @@ export function EvaluationScorecard({
   onRetry,
   onBackToCatalog,
 }) {
-  if (!result || !result.result) {
+  // Use real backend evaluation if complete, or calculate dynamic Rubric evaluation
+  const activeResult = useMemo(() => {
+    if (result && result.result) {
+      return result;
+    }
+    return generateEvaluationResult(scenario, result, []);
+  }, [result, scenario]);
+
+  if (!activeResult || !activeResult.result) {
     return (
       <div className="card-white" style={{ textAlign: 'center', padding: '60px 24px' }}>
         <div style={{ width: 44, height: 44, borderRadius: '50%', backgroundColor: '#F4F4F2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
           <ClockIcon style={{ width: 22, height: 22, color: '#111111' }} />
         </div>
         <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#111111', marginBottom: 8 }}>
-          Đang tổng hợp đánh giá từ Hệ thống Chấm điểm AI...
+          Đang tính điểm theo khung Rubric 2.0...
         </h3>
         <p style={{ fontSize: '0.88rem', color: '#737373', maxWidth: 460, margin: '0 auto 24px' }}>
           Hệ thống đang đối chiếu hội thoại với 5 tiêu chí Rubric chuẩn và kiểm chứng tính xác thực của thông số sản phẩm.
         </p>
-        <Button variant="outline" onClick={onBackToCatalog}>
-          Về danh sách tình huống
-        </Button>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+          <Button variant="outline" onClick={onBackToCatalog}>
+            Về danh sách tình huống
+          </Button>
+        </div>
       </div>
     );
   }
 
-  const evalData = result.result;
-  const overallScore5 = evalData.overall_score || 4.2;
+  const evalData = activeResult.result;
+  const overallScore5 = typeof evalData.overall_score === 'number' ? evalData.overall_score : 4.4;
   const overallScore100 = Math.round((overallScore5 / 5) * 100);
-  const isPassed = evalData.passed ?? overallScore5 >= 3.5;
+  const isPassed = typeof evalData.passed === 'boolean' ? evalData.passed : overallScore5 >= 3.5;
 
   const criteriaLabels = {
     need_discovery: 'Need Discovery (Khai thác Nhu cầu)',
@@ -59,7 +71,7 @@ export function EvaluationScorecard({
               {scenario?.title || 'Đánh giá phiên tư vấn khách hàng'}
             </h1>
             <p style={{ fontSize: '0.85rem', color: '#A3A3A3', marginTop: 4 }}>
-              Phiên ID: <code style={{ color: '#E0E0E0' }}>{result.session_id}</code> • Trạng thái:{' '}
+              Phiên ID: <code style={{ color: '#E0E0E0' }}>{activeResult.session_id}</code> • Trạng thái:{' '}
               <span style={{ color: '#FFFFFF', fontWeight: 600 }}>Bản nháp AI (Chờ Quản lý duyệt)</span>
             </p>
           </div>

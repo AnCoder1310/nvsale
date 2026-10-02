@@ -93,6 +93,8 @@ export function RoleplayView({ scenarios }) {
         duration: '15 phút',
         score: overall100,
         passed: resultView.result.passed ?? true,
+        resultView: resultView,
+        scenario: activeScenario,
       };
       setHistoryList((prev) => [newHistoryItem, ...prev]);
     }
@@ -143,7 +145,13 @@ export function RoleplayView({ scenarios }) {
         onClose={() => setShowHistoryModal(false)}
         historyList={historyList}
         onSelectSession={(item) => {
-          alert(`Đang xem phiên: ${item.title} - Điểm: ${item.score}/100`);
+          if (item.resultView) {
+            setEvaluationResult(item.resultView);
+            if (item.scenario) setActiveScenario(item.scenario);
+            setViewMode('evaluation');
+          } else {
+            alert(`Đang xem phiên: ${item.title} - Điểm: ${item.score}/100`);
+          }
         }}
       />
     </div>

@@ -1,4 +1,4 @@
-const API_BASE = '/api/v1';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 export class ApiError extends Error {
   constructor(message, status = 500, detail = null) {
@@ -10,7 +10,11 @@ export class ApiError extends Error {
 }
 
 export async function request(endpoint, options = {}) {
-  const url = `${API_BASE}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = API_BASE.endsWith('/')
+    ? `${API_BASE.slice(0, -1)}${cleanEndpoint}`
+    : `${API_BASE}${cleanEndpoint}`;
+
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {}),

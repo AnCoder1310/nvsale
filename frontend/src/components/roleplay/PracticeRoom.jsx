@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChevronLeft, SendIcon } from '../common/Icons';
+import { ChevronLeft, SendIcon, SparkleIcon, CheckCircleIcon } from '../common/Icons';
 import { Badge } from '../common/Badge';
 import { Button } from '../common/Button';
 import { Modal } from '../common/Modal';
 import { practiceApi } from '../../api/practiceApi';
-import { createId } from '../../lib/id';
+import { generateEvaluationResult } from '../../lib/evaluationEngine.js';
+import { createId } from '../../lib/id.js';
 
 export function PracticeRoom({
   scenario,
@@ -60,58 +61,56 @@ export function PracticeRoom({
       timestamp: new Date().toISOString(),
     };
 
-    setMessages((prev) => [...prev, advisorMsg]);
+    const newMessages = [...messages, advisorMsg];
+    setMessages(newMessages);
     setInputMessage('');
     setLoading(true);
-    setTurnCount((prev) => prev + 1);
+    const newTurn = turnCount + 1;
+    setTurnCount(newTurn);
 
     try {
-      if (session?.session_id && scenario?.is_backend) {
+      if (
+        session?.session_id &&
+        !session.session_id.startsWith('sess-local') &&
+        scenario?.is_backend
+      ) {
         const updated = await practiceApi.sendMessage(session.session_id, text);
-        if (updated.messages && updated.messages.length > 0) {
+        if (updated?.messages && updated.messages.length > 0) {
           setMessages(updated.messages);
         }
-        if (updated.conversation_stage) {
+        if (updated?.conversation_stage) {
           setStage(updated.conversation_stage);
         }
-        if (updated.turn_count !== undefined) {
+        if (updated?.turn_count !== undefined) {
           setTurnCount(updated.turn_count);
         }
-      } else {
-        // Simulated responsive AI customer if offline/preset
-        await new Promise((r) => setTimeout(r, 1000));
-        let reply = '';
-        if (turnCount === 1) {
-          reply =
-            'Anh cũng đang cân nhắc chi phí vận hành hàng tháng. Xe điện chạy nhiều có thực sự tiết kiệm hơn xe xăng không em? Pin sau 3-5 năm thì độ bền ra sao?';
-          setStage('objection_handling');
-        } else if (turnCount === 2) {
-          reply =
-            'Ừ, nếu thuê pin mà được đổi mới khi chai dưới 70% thì anh cũng yên tâm phần nào. Thế còn trạm sạc quanh khu vực anh ở và các cung đường dài thì thế nào?';
-          setStage('presentation');
-        } else {
-          reply =
-            'Nghe thuyết phục đấy. Em gửi anh bảng kê chi tiết lăn bánh và xếp lịch cho anh lái thử xe vào cuối tuần này nhé.';
-          setStage('closing');
-        }
-
-        const customerMsg = {
-          message_id: createId('cust'),
-          role: 'customer',
-          content: reply,
-          timestamp: new Date().toISOString(),
-        };
-        setMessages((prev) => [...prev, customerMsg]);
+        setLoading(false);
+        return;
       }
+      throw new Error('Local simulation');
     } catch {
-      const fallbackCustomerMsg = {
-        message_id: createId('cust-err'),
+      // Intelligent fallback customer simulator
+      await new Promise((r) => setTimeout(r, 900));
+
+      let reply;
+      if (newTurn <= 2) {
+        reply = `Anh cũng đang tính toán chi phí vận hành hàng tháng. Xe điện chạy nhiều có thực sự tiết kiệm hơn xe xăng không em? Pin sau 3-5 năm thì độ bền ra sao và sạc ở đâu tiện nhất?`;
+        setStage('objection_handling');
+      } else if (newTurn === 3) {
+        reply = `Ừ, nếu thuê pin mà được đổi mới miễn phí khi chai dưới 70% thì anh cũng yên tâm phần nào. Thế còn chính sách hỗ trợ trả góp và ưu đãi thuế trước bạ hiện tại thế nào em?`;
+        setStage('presentation');
+      } else {
+        reply = `Nghe tư vấn rất rõ ràng và thuyết phục đấy. Em gửi anh bảng kê chi tiết giá lăn bánh và xếp lịch cho anh qua showroom lái thử xe vào cuối tuần này nhé!`;
+        setStage('closing');
+      }
+
+      const customerMsg = {
+        message_id: createId('cust'),
         role: 'customer',
-        content:
-          'Anh hiểu rồi. Em có thể nói rõ hơn về sự khác nhau giữa việc thuê pin và mua đứt pin không? Phương án nào tối ưu kinh tế hơn cho anh?',
+        content: reply,
         timestamp: new Date().toISOString(),
       };
-      setMessages((prev) => [...prev, fallbackCustomerMsg]);
+      setMessages((prev) => [...prev, customerMsg]);
     } finally {
       setLoading(false);
     }
@@ -120,86 +119,41 @@ export function PracticeRoom({
   const handleFinishSession = async () => {
     setFinishing(true);
     try {
-      if (session?.session_id && scenario?.is_backend) {
-        const resultView = await practiceApi.finishSession(session.session_id);
-        onFinish(resultView);
-      } else {
-        await new Promise((r) => setTimeout(r, 1200));
-        // Synthetic high quality evaluation result
-        const fallbackResult = {
-          session_id: session?.session_id || createId('sess'),
-          evaluation_status: 'completed',
-          result: {
-            session_id: session?.session_id || createId('sess'),
-            scenario_id: scenario?.scenario_id || 'SCENARIO_01_VF5_TAXI',
-            rubric_version: '2.0',
-            assessed_criteria_count: 5,
-            overall_score: 4.4,
-            passed: true,
-            evaluations: [
-              {
-                criterion: 'need_discovery',
-                status: 'assessed',
-                score: 4,
-                reason: 'Tư vấn viên đã chủ động khai thác thói quen di chuyển và nỗi băn khoăn về chi phí nhiên liệu của khách hàng.',
-                evidence: [{ message_id: 'adv-1', quote: messages[1]?.content || 'khai thác nhu cầu di chuyển' }],
-                improvement_suggestion: 'Nên đặt thêm câu hỏi về người cùng đưa ra quyết định mua xe trong gia đình.',
-              },
-              {
-                criterion: 'product_knowledge',
-                status: 'assessed',
-                score: 5,
-                reason: 'Trình bày chính xác thông số động cơ, phạm vi hoạt động NEDC và thời gian sạc nhanh DC.',
-                evidence: [{ message_id: 'adv-2', quote: 'thông số kỹ thuật và trạm sạc V-GREEN' }],
-              },
-              {
-                criterion: 'objection_handling',
-                status: 'assessed',
-                score: 5,
-                reason: 'Làm rõ băn khoăn rủi ro chai pin bằng chính sách cam kết đổi mới khi SOH < 70%.',
-                evidence: [{ message_id: 'adv-3', quote: 'chính sách đổi pin khi SOH < 70%' }],
-              },
-              {
-                criterion: 'policy_accuracy',
-                status: 'assessed',
-                score: 5,
-                reason: 'Trích dẫn chính xác miễn lệ phí trước bạ 0% và ưu đãi sạc điện công cộng.',
-                evidence: [{ message_id: 'adv-4', quote: 'ưu đãi trước bạ 0%' }],
-              },
-              {
-                criterion: 'closing_next_step',
-                status: 'assessed',
-                score: 4,
-                reason: 'Chủ động đề xuất lái thử trải nghiệm thực tế và cung cấp thông tin liên hệ showroom.',
-                evidence: [{ message_id: 'adv-5', quote: 'hẹn lịch lái thử cuối tuần' }],
-                improvement_suggestion: 'Có thể chủ động xin thêm số Zalo để gửi bảng tính trả góp ngay.',
-              },
-            ],
-            summary_strengths: [
-              'Kỹ năng lắng nghe và đồng cảm với nỗi lo tài chính của khách hàng rất tốt.',
-              'Vận dụng thành thạo chính sách bảo hiểm pin thuê để biến điểm yếu thành lợi thế cạnh tranh.',
-            ],
-            summary_weaknesses: [
-              'Cần đẩy nhanh tốc độ chốt lịch hẹn lái thử ngay khi khách hàng có tín hiệu đồng thuận.',
-            ],
-            factual_findings: [
-              {
-                claim: 'Chính sách pin: Đổi mới miễn phí khi dung lượng SOH dưới 70%',
-                status: 'supported',
-                reason: 'Đã đối chiếu chuẩn xác với HỢP ĐỒNG CHO THUÊ PIN XE ĐIỆN 2026',
-              },
-              {
-                claim: 'Mạng lưới sạc: Hơn 150.000 cổng sạc trên 63 tỉnh thành',
-                status: 'supported',
-                reason: 'Đã đối chiếu với dữ liệu hạ tầng trạm sạc V-GREEN 2026',
-              },
-            ],
-          },
-        };
-        onFinish(fallbackResult);
+      let resultView = null;
+
+      // 1. Try real backend finish endpoint if backend session is active
+      if (
+        session?.session_id &&
+        !session.session_id.startsWith('sess-local') &&
+        scenario?.is_backend
+      ) {
+        try {
+          const res = await practiceApi.finishSession(session.session_id);
+          if (res && res.result && res.evaluation_status === 'completed') {
+            resultView = res;
+          } else if (res && res.evaluation_status === 'pending') {
+            await new Promise((r) => setTimeout(r, 1200));
+            const polled = await practiceApi.getResult(session.session_id);
+            if (polled && polled.result) {
+              resultView = polled;
+            }
+          }
+        } catch (apiErr) {
+          console.warn('Backend finishSession unavailable, activating Rubric 2.0 Engine:', apiErr);
+        }
       }
-    } catch {
-      alert('Không thể hoàn tất chấm điểm phiên lúc này. Vui lòng thử lại.');
+
+      // 2. Guarantee evaluation via dynamic Rubric 2.0 Engine if backend did not yield final result
+      if (!resultView || !resultView.result) {
+        await new Promise((r) => setTimeout(r, 600));
+        resultView = generateEvaluationResult(scenario, session, messages);
+      }
+
+      onFinish(resultView);
+    } catch (err) {
+      console.error('Finish fallback execution:', err);
+      const failsafeResult = generateEvaluationResult(scenario, session, messages);
+      onFinish(failsafeResult);
     } finally {
       setFinishing(false);
       setShowFinishConfirm(false);
@@ -240,16 +194,16 @@ export function PracticeRoom({
 
         <button
           className="btn-primary"
-          style={{ backgroundColor: '#111111', fontSize: '0.82rem', padding: '8px 16px' }}
+          style={{ backgroundColor: '#111111', fontSize: '0.85rem', padding: '9px 18px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
           onClick={() => setShowFinishConfirm(true)}
           disabled={finishing}
         >
-          🏁 Kết thúc & Chấm điểm
+          <span>🏁 Kết thúc & Chấm điểm</span>
         </button>
       </div>
 
       {/* CUSTOMER CONTEXT BANNER */}
-      <div style={{ padding: '12px 20px', backgroundColor: '#F8F8F6', borderBottom: '1px solid #EDEDEA', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+      <div style={{ padding: '12px 20px', backgroundColor: '#F8F8F6', borderBottom: '1px solid #EDEDEA', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <img
             src={scenario?.persona?.avatar}
@@ -265,7 +219,7 @@ export function PracticeRoom({
             </div>
           </div>
         </div>
-        <div style={{ fontSize: '0.78rem', color: '#555555', textAlign: 'right' }}>
+        <div style={{ fontSize: '0.78rem', color: '#555555' }}>
           🎯 <strong>Mục tiêu:</strong> {scenario?.training_objective}
         </div>
       </div>
@@ -338,7 +292,7 @@ export function PracticeRoom({
               style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover' }}
             />
             <div style={{ padding: '12px 18px', borderRadius: 14, backgroundColor: '#F4F4F2', fontSize: '0.85rem', color: '#666666' }}>
-              Khách hàng đang soạn câu trả lời...
+              Khách hàng đang suy nghĩ và phản hồi...
             </div>
           </div>
         )}
@@ -347,8 +301,8 @@ export function PracticeRoom({
       </div>
 
       {/* INPUT BAR */}
-      <div style={{ padding: '16px 20px', borderTop: '1px solid #E5E5E5', backgroundColor: '#FAFAFA' }}>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
+      <div style={{ padding: '14px 20px', borderTop: '1px solid #E5E5E5', backgroundColor: '#FAFAFA' }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <textarea
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
@@ -362,6 +316,7 @@ export function PracticeRoom({
             rows={2}
             style={{
               flex: 1,
+              minWidth: 260,
               padding: '10px 14px',
               borderRadius: 10,
               border: '1px solid #D1D1CE',
@@ -373,38 +328,63 @@ export function PracticeRoom({
             }}
             disabled={loading}
           />
-          <button
-            onClick={handleSendMessage}
-            disabled={!inputMessage.trim() || loading}
-            className="btn-primary"
-            style={{ height: 46, padding: '0 20px' }}
-          >
-            <SendIcon style={{ width: 16, height: 16 }} />
-            <span>Gửi</span>
-          </button>
+
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button
+              onClick={handleSendMessage}
+              disabled={!inputMessage.trim() || loading}
+              className="btn-primary"
+              style={{ height: 46, padding: '0 20px' }}
+            >
+              <SendIcon style={{ width: 16, height: 16 }} />
+              <span>Gửi</span>
+            </button>
+
+            <button
+              onClick={() => setShowFinishConfirm(true)}
+              className="btn-outline"
+              style={{ height: 46, padding: '0 16px', fontWeight: 600, fontSize: '0.82rem', borderColor: '#CFCFCB' }}
+              title="Kết thúc và chấm điểm phiên thực chiến"
+            >
+              <span>🏁 Chấm điểm</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* FINISH MODAL */}
+      {/* FINISH CONFIRM MODAL */}
       <Modal
         isOpen={showFinishConfirm}
         onClose={() => setShowFinishConfirm(false)}
         title="Xác nhận hoàn tất phiên thực chiến"
-        maxWidth={500}
+        maxWidth={520}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <p style={{ fontSize: '0.92rem', color: '#333333', lineHeight: 1.5 }}>
-            Bạn có chắc chắn muốn kết thúc phiên và gửi tới Hệ thống Chấm điểm AI không?
+          <p style={{ fontSize: '0.95rem', color: '#111111', lineHeight: 1.5 }}>
+            Bạn muốn đóng băng hội thoại và yêu cầu Hệ thống Chấm điểm AI đánh giá phiên thực chiến này?
           </p>
-          <div style={{ backgroundColor: '#F7F7F5', padding: '12px 16px', borderRadius: 8, fontSize: '0.82rem', color: '#555555' }}>
-            Hội thoại sẽ được đóng băng và đánh giá tự động dựa trên <strong>5 tiêu chí Rubric chuẩn</strong> cùng kiểm chứng thông số sản phẩm.
+
+          <div style={{ backgroundColor: '#F7F7F5', border: '1px solid #E5E5E5', padding: '14px 16px', borderRadius: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111111', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <CheckCircleIcon style={{ width: 14, height: 14, color: '#166534' }} />
+              Hệ thống sẽ chấm điểm 5 tiêu chí Rubric chuẩn:
+            </div>
+            <ul style={{ listStyle: 'none', paddingLeft: 0, fontSize: '0.78rem', color: '#555555', display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <li>1. Need Discovery (Khai thác nhu cầu)</li>
+              <li>2. Product Knowledge (Kiến thức sản phẩm & Thông số)</li>
+              <li>3. Objection Handling (Xử lý băn khoăn về pin & trạm sạc)</li>
+              <li>4. Policy Accuracy (Độ chính xác chính sách VinFast)</li>
+              <li>5. Closing / Next Step (Chốt lịch hẹn & bước tiếp theo)</li>
+            </ul>
           </div>
+
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
             <Button variant="outline" onClick={() => setShowFinishConfirm(false)}>
-              Tiếp tục luyện tập
+              Tiếp tục trao đổi
             </Button>
             <Button variant="primary" loading={finishing} onClick={handleFinishSession}>
-              Hoàn tất & Chấm điểm
+              <SparkleIcon style={{ width: 14, height: 14 }} />
+              <span>Chấm điểm ngay</span>
             </Button>
           </div>
         </div>
